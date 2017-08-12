@@ -11,10 +11,10 @@ public class MainClient extends Application{
 	}
 
 	public static Stage primaryStage;
-	public static Scene primaryScene;
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		new Main().start(primaryStage, "Client.fxml");
+		MainClient.primaryStage = primaryStage;
+		new Main().start(MainClient.primaryStage, "Client.fxml");
 	}
 }

@@ -1,13 +1,12 @@
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Connection {
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-	private ServerSocket server;
 	private Socket socket;
+	private static final int port = 6666;
 
 	public ObjectOutputStream getOutput() {
 		return output;
@@ -25,14 +24,6 @@ public class Connection {
 		this.input = input;
 	}
 
-	public ServerSocket getServer() {
-		return server;
-	}
-
-	public void setServer(ServerSocket server) {
-		this.server = server;
-	}
-
 	public Socket getSocket() {
 		return socket;
 	}
@@ -41,7 +32,7 @@ public class Connection {
 		this.socket = socket;
 	}
 
-	public int getPort() {
-		return server.getLocalPort();
+	public static int getPort(){
+		return port;
 	}
 }

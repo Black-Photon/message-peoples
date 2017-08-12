@@ -7,6 +7,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -28,10 +29,10 @@ public class Client {
 			setupStreams();
 			whileChatting();
 		} catch (EOFException e) {
-			showMessage("Client ended the socket");
+			showMessage("Client ended the connection");
 		} catch (IOException e){
 			e.printStackTrace();
-		}finally {
+		} finally {
 			closeSystems();
 		}
 	}
@@ -48,36 +49,23 @@ public class Client {
 				showMessage("CLIENT - " + message);
 			}
 		}catch (IOException e){
-			chatWindow.setText(chatWindow.getText()+"Error in sending message\n");
+			chatWindow.setText(chatWindow.getText()+"Error in sending message");
 		}
 	}
 	private void connectToServer() throws IOException {
-		showMessage("Attempting Connection...\n");
-		for(int port = 6666; port<6683; port++) {
-			if(!CrunchifyIsSocketAliveUtility.isSocketAliveUitlitybyCrunchify(serverIP,port)) {
-				try {
-					socket = new Socket(InetAddress.getByName(serverIP), port);
-					System.out.println("Connected to port: " + port);
-					break;
-				} catch (Exception e) {
-					System.out.println(port);
-					if (port == 6682) {
-						showMessage("Could not connect");
-						closeSystems();
-					}
-				}
-			}else{
-				System.out.println("Port "+port+" unavailable");
-			}
-
+		try {
+			showMessage("Attempting Connection...");
+			socket = new Socket(InetAddress.getByName(serverIP), 6666);
+			System.out.println("Connected to port: " + 6666);
+			//showMessage("Now connected to " + socket.getInetAddress().getHostName());
+		}catch (ConnectException e){
+			showMessage("Could not connect");
 		}
-		showMessage("Now connected to " + socket.getInetAddress().getHostName());
 	}
 	private void setupStreams() throws IOException{
 		output = new ObjectOutputStream(socket.getOutputStream());
 		output.flush();
 		input = new ObjectInputStream(socket.getInputStream());
-		showMessage("Streams setup");
 	}
 	private void whileChatting() throws  IOException{
 		ableToType(true);
@@ -94,15 +82,19 @@ public class Client {
 		chatWindow.setText(chatWindow.getText()+message+"\n");
 	}
 	private void closeSystems(){
-		showMessage("Closing Systems...");
+
 		ableToType(false);
 		try{
 			output.close();
 			input.close();
 			socket.close();
+			showMessage("Connection Closed");
 		}catch (IOException e){
 			e.printStackTrace();
+		}catch (NullPointerException e) {
+			System.out.println("No connection to close");
 		}
+
 
 	}
 	private void ableToType(boolean canType){
@@ -113,6 +105,7 @@ public class Client {
 
 	@FXML
 	public void initialize() {
+
 		Task task = new Task() {
 			@Override
 			protected Object call() throws Exception {
@@ -145,9 +138,4 @@ public class Client {
 				}
 		).start();
 	}
-
-
-	/*public static boolean available(int port){
-
-	}*/
 }

@@ -9,6 +9,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 public class Server {
@@ -16,104 +17,123 @@ public class Server {
 	private ObjectInputStream input;
 	private ServerSocket server;
 	private Socket socket;
-	private int port = 6789;
 	private ArrayList<Connection> connections;
-	private Connection connection;
 	@FXML
 	public TextField userText;
 	@FXML
 	public TextArea chatWindow;
 
-	private static Connection tempConnection;
 	private static String message;
+	private static boolean end = false;
 
 	public void startRunning() {
-		/*
-		try {
-			while (true) {
-				try {//*/
-
-
-
-
 		connections = new ArrayList<Connection>();
-		startConnecting();
-
-
-
-					/*
-				} catch (EOFException e) {
-					showMessage("Server ended the socket");
-				} finally {
-					closeSystems();
-				}
-			}
-		} catch (IOException e) {
+		try {
+			server = new ServerSocket(Connection.getPort(), 100);
+		}catch(IOException e){
 			e.printStackTrace();
-		}//*/
-
+		}
+		startConnecting();
 	}
 
-	private void sendMessage(String message){
-		for(Connection i: connections) {
-			try {
-				if(message.equals("END")){
-					i.getOutput().writeObject("SERVER - END");
-					i.getOutput().flush();
-					showMessage("SERVER - END");
-				}else
-				if(!(message.equals("")||message.equals(" "))){
-					i.getOutput().writeObject("SERVER - " + message);
-					i.getOutput().flush();
-					showMessage("SERVER - " + message);
+	private void sendMessage(String message, Connection connection){
+		if(message.equals("END")){
+			end = true;
+		}
+
+		try {
+			if(!(message.equals("")||message.equals(" "))){
+				if(isClient(message)) {
+					connection.getOutput().writeObject(message);
+					connection.getOutput().flush();
+				}else{
+					message = "SERVER - " + message;
+					connection.getOutput().writeObject(message);
+					connection.getOutput().flush();
 				}
-			}catch (IOException e){
-				chatWindow.setText(chatWindow.getText()+"Error in sending message\n");
+				//showMessage("SERVER - " + message);
 			}
+		}catch (IOException e) {
+			chatWindow.setText(chatWindow.getText() + "Error in sending message\n");
+		}
+	}
+	private boolean isClient(String message){
+		try {
+			if(message.substring(0,8).equals("CLIENT -")){
+				return true;
+			}
+			return false;
+		}catch(StringIndexOutOfBoundsException e){
+			return false;
+		}
+	}
+	private void sendAllMessage(String message){
+		for(Connection i: connections) {
+			sendMessage(message, i);
 		}
 	}
 	private void waitForConnection(Connection connection) throws IOException {
-		showMessage("Waiting for someone to connect...\n");
+		if(connections.size()==0) {
+			showMessage("Waiting for Connection...");
+		}
 		socket = server.accept();
-		showMessage("Now connected to " + socket.getInetAddress().getHostName());
+		//showMessage("Now connected to " + socket.getInetAddress().getHostName());
 	}
 	private void setupStreams() throws IOException{
-		System.out.println("Setting up streams");
+		//System.out.println("Setting up streams");
 		output = new ObjectOutputStream(socket.getOutputStream());
 		output.flush();
 		input = new ObjectInputStream(socket.getInputStream());
-		showMessage("Streams setup");
+		//showMessage("Streams setup\n");
 	}
-	private void whileChatting(Connection connection) throws  IOException{
-		System.out.println("Chatting");
-		message = "Successfully connected";
-		sendMessage(message);
+	private void whileChatting(Connection current) throws  IOException{
+		//System.out.println("Chatting");
+		message = "Someone connected";
+		showMessage("SERVER - "+message);
+		sendAllMessage(message);
 		ableToType(true);
 		do{
 			try{
-				message = (String) connection.getInput().readObject();
+				message = (String) current.getInput().readObject();
 				showMessage(message);
-			}catch (ClassNotFoundException e){
+				for(Connection connection: connections){
+					if(!connection.equals(current)){
+						sendMessage(message, connection);
+					}
+				}
+			}catch (EOFException e){
+				break;
+			}catch (ClassNotFoundException e) {
 				showMessage("Unable to process received message");
-			}catch (IOException e){
+			} catch (IOException e){
 				e.printStackTrace();
+				break;
 			}
 		}while(!message.equals("CLIENT - END"));
 	}
 	private void showMessage(String message){
 		chatWindow.setText(chatWindow.getText()+message+"\n");
 	}
-	private void closeSystems(){
-		showMessage("Closing Systems...");
-		ableToType(false);
-		try{
-			output.close();
-			input.close();
-			socket.close();
-		}catch (IOException e){
+	private void closeConnection(Connection connection) {
+		try {
+			connection.getSocket().close();
+			connection.getInput().close();
+			connection.getOutput().close();
+			connections.remove(connection);
+		}catch (IOException e) {
 			e.printStackTrace();
 		}
-
+		if(end){
+			showMessage("Server Ended the Connection");
+			ableToType(false);
+		}else {
+			showMessage("SERVER - Someone Left");
+			sendAllMessage("Someone Left");
+			if (connections.size() == 0) {
+				ableToType(false);
+				startConnecting();
+			}
+		}
 	}
 	private void ableToType(boolean canType){
 		userText.setEditable(canType);
@@ -139,6 +159,7 @@ public class Server {
 	}
 	@FXML
 	public void startSendMessage(){
+		showMessage("SERVER - "+userText.getText());
 		new Thread(
 				new Task() {
 					@Override
@@ -147,7 +168,7 @@ public class Server {
 					}
 					@Override
 					public void run(){
-						sendMessage(userText.getText());
+						sendAllMessage(userText.getText());
 						userText.setText("");
 					}
 				}
@@ -162,114 +183,27 @@ public class Server {
 						return null;
 					}
 					@Override
-					public void run(){
+					public void run() {
+						Connection connection = new Connection();
 						try {
-							while (true) {
-								try {
-									port = findPort();
-									System.out.println("Port: "+port);
-									connection = new Connection();
-									if(port!=-1) {
-										server = new ServerSocket(port,100);
-										connection.setServer(server);
-									}else{
-										System.out.println("No ports available");
-										break;
-									}
-									waitForConnection(connection);
-									connection.setSocket(socket);
-									setupStreams();
-									connection.setInput(input);
-									connection.setOutput(output);
-									connections.add(connection);
-									startConnecting();
-									whileChatting(connection);
-								} catch (EOFException e) {
-									showMessage("Server ended the socket");
-								} finally {
-									closeSystems();
-								}
-							}
+							waitForConnection(connection);
+							connection.setSocket(socket);
+							setupStreams();
+							connection.setInput(input);
+							connection.setOutput(output);
+							connections.add(connection);
+							startConnecting();
+							whileChatting(connection);
+						} catch (EOFException e) {
+							showMessage("Server ended the socket");
 						} catch (IOException e) {
 							e.printStackTrace();
+						} finally {
+							closeConnection(connection);
+							return;
 						}
 					}
 				}
 		).start();
-	}
-	/*private void whileChattingAll(Connection connection){
-		tempConnection = connection;
-		new Thread(
-				new Task() {
-					@Override
-					protected Object call() throws Exception {
-						return null;
-					}
-					@Override
-					public void run(){
-						Connection thisConnection = tempConnection;
-						do{
-							try{
-								message = (String) tempConnection.getInput().readObject();
-								showMessage(message);
-							}catch (ClassNotFoundException e){
-								showMessage("Unable to process received message");
-							}catch (IOException e){
-								e.printStackTrace();
-							}
-						}while(!message.equals("CLIENT - END"));
-					}
-				}
-		).start();
-	}//*/
-	/*private void sendMessageAll(Connection connection){
-		tempConnection = connection;
-		new Thread(
-				new Task() {
-					@Override
-					protected Object call() throws Exception {
-						return null;
-					}
-					@Override
-					public void run() {
-						Connection thisConnection = tempConnection;
-						try {
-							if(message.equals("END")){
-								output.writeObject("SERVER - END");
-								output.flush();
-								showMessage("SERVER - END");
-							}else
-							if(!(message.equals("")||message.equals(" "))){
-								output.writeObject("SERVER - " + message);
-								output.flush();
-								showMessage("SERVER - " + message);
-							}
-						}catch (IOException e){
-							chatWindow.setText(chatWindow.getText()+"Error in sending message\n");
-						}
-					}
-				}
-		).start();
-	};//*/
-	private int findPort(){
-		boolean temp;
-
-		for(int i = 6666; i<6683; i++){
-			temp = true;
-			for(int j = 0; j<connections.size(); j++){
-				try {
-					if (i == connections.get(j).getPort()) {
-						temp = false;
-						break;
-					}
-				}catch (Exception e){
-					System.out.println("No port");
-				}
-			}
-			if(temp) {
-				return i;
-			}
-		}
-		return -1;
 	}
 }
