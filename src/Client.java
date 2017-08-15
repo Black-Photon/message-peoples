@@ -11,19 +11,34 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 
+/**
+ * Used as controller for a client.
+ *
+ * <h2>FXML:</h2>
+ * <h3>Vars:</h3>
+ * TextField userText<br/>
+ * TextArea chatWindow
+ *
+ * <h3>Methods:</h3>
+ * startSendMessage sends whatever's in the TextField and clears it
+ *
+ */
+
 public class Client {
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private String message = "";
-	private String serverIP = "127.0.0.1";
+	private final String serverIP = "127.0.0.1";
 	private Socket socket;
-
 	@FXML
 	public TextField userText;
 	@FXML
 	public TextArea chatWindow;
 
-	public void startRunning() {
+	/**
+	 * Starts the client background running. Called by initialize ONLY
+	 */
+	private void startRunning() {
 		try {
 			connectToServer();
 			setupStreams();
@@ -36,6 +51,11 @@ public class Client {
 			closeSystems();
 		}
 	}
+
+	/**
+	 * Sends a message to server
+	 * @param message Message to send
+	 */
 	private void sendMessage(String message){
 		try {
 			if(message.equals("END")){
@@ -52,21 +72,36 @@ public class Client {
 			chatWindow.setText(chatWindow.getText()+"Error in sending message");
 		}
 	}
+
+	/**
+	 * Attempts to connect to server
+	 * Shows "Could not connect" on failure (Server inaccessible/down)
+	 * @throws IOException Thrown in connection
+	 */
 	private void connectToServer() throws IOException {
 		try {
 			showMessage("Attempting Connection...");
 			socket = new Socket(InetAddress.getByName(serverIP), 6666);
 			System.out.println("Connected to port: " + 6666);
-			//showMessage("Now connected to " + socket.getInetAddress().getHostName());
 		}catch (ConnectException e){
 			showMessage("Could not connect");
 		}
 	}
+
+	/**
+	 * Creates input and output streams
+	 * @throws IOException Due to creation
+	 */
 	private void setupStreams() throws IOException{
 		output = new ObjectOutputStream(socket.getOutputStream());
 		output.flush();
 		input = new ObjectInputStream(socket.getInputStream());
 	}
+
+	/**
+	 * Waits for a message, and displays it
+	 * @throws IOException When reading message sent
+	 */
 	private void whileChatting() throws  IOException{
 		ableToType(true);
 		do{
@@ -78,9 +113,18 @@ public class Client {
 			}
 		}while(!message.equals("SERVER - END"));
 	}
+
+	/**
+	 * Shows the message passed, and a new line
+	 * @param message Message to show
+	 */
 	private void showMessage(String message){
 		chatWindow.setText(chatWindow.getText()+message+"\n");
 	}
+
+	/**
+	 * Closes connection and prevents typing
+	 */
 	private void closeSystems(){
 
 		ableToType(false);
@@ -97,12 +141,18 @@ public class Client {
 
 
 	}
+
+	/**
+	 * Changes whether you are permitted to type
+	 * @param canType Whether you can type
+	 */
 	private void ableToType(boolean canType){
 		userText.setEditable(canType);
 	}
 
-
-
+	/**
+	 * Start's the background processes running in a new thread
+	 */
 	@FXML
 	public void initialize() {
 
@@ -122,20 +172,13 @@ public class Client {
 		thread.start();
 
 	}
+
+	/**
+	 * Attempt's to send a message to all connected devices
+	 */
 	@FXML
 	public void startSendMessage(){
-		new Thread(
-				new Task() {
-					@Override
-					protected Object call() throws Exception {
-						return null;
-					}
-					@Override
-					public void run(){
-						sendMessage(userText.getText());
-						userText.setText("");
-					}
-				}
-		).start();
+		sendMessage(userText.getText());
+		userText.setText("");
 	}
 }

@@ -2,37 +2,49 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-public class Connection {
+/**
+ * Object holds all data needed for a connection. Used serverside
+ *
+ * <h3>Variables:</h3>
+ * ObjectOutputStream output;<br/>
+ * ObjectInputStream input;<br/>
+ * Socket socket;<br/>
+ * final int port = 6666;<br/>
+ */
+
+class Connection {
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private Socket socket;
 	private static final int port = 6666;
 
-	public ObjectOutputStream getOutput() {
+	//Getters and setters
+
+	ObjectOutputStream getOutput() {
 		return output;
 	}
 
-	public void setOutput(ObjectOutputStream output) {
+	void setOutput(ObjectOutputStream output) {
 		this.output = output;
 	}
 
-	public ObjectInputStream getInput() {
+	ObjectInputStream getInput() {
 		return input;
 	}
 
-	public void setInput(ObjectInputStream input) {
+	void setInput(ObjectInputStream input) {
 		this.input = input;
 	}
 
-	public Socket getSocket() {
+	Socket getSocket() {
 		return socket;
 	}
 
-	public void setSocket(Socket socket) {
+	void setSocket(Socket socket) {
 		this.socket = socket;
 	}
 
-	public static int getPort(){
+	static int getPort(){
 		return port;
 	}
 }
