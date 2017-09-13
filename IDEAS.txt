@@ -1,0 +1,25 @@
+/** Format:
+  * **********
+  * 
+  * (Idea/Change): (Name) - (Type):
+  * Author: (Author)
+  * (Info Type): (Info)
+  * 
+  * ***
+  * 
+  * (Idea)
+  * 
+  * **********
+  */
+
+**********
+
+Idea: Example - New Feature:
+Author: Black-Photon
+Website: https://github.com/Black-Photon
+
+***
+
+My idea is that we should have an example idea in IDEAS.txt so people know how to suggest a new idea. This would mean people will be able to follow this example and keep the formatting good :D
+
+**********
