@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+<StackPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jOSeph_4.resources.controllers.core.Messaging_Controller">
+   <children>
+      <BorderPane prefHeight="200.0" prefWidth="200.0">
+         <top>
+            <BorderPane prefHeight="32.0" prefWidth="600.0" BorderPane.alignment="CENTER">
+               <left>
+                  <Button mnemonicParsing="false" onAction="#onPressJoin" styleClass="curved" text="JOIN" BorderPane.alignment="CENTER">
+                     <BorderPane.margin>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </BorderPane.margin>
+                  </Button>
+               </left>
+               <right>
+                  <HBox alignment="CENTER_RIGHT" prefHeight="26.0" prefWidth="442.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#onDeletePressed" styleClass="curved" text="DELETE">
+                           <HBox.margin>
+                              <Insets right="20.0" />
+                           </HBox.margin>
+                        </Button>
+                        <Button mnemonicParsing="false" onAction="#onPressEdit" styleClass="curved" text="EDIT">
+                           <HBox.margin>
+                              <Insets right="20.0" />
+                           </HBox.margin></Button>
+                        <Button mnemonicParsing="false" onAction="#onPressCreate" styleClass="curved" text="CREATE" />
+                     </children>
+                     <BorderPane.margin>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </BorderPane.margin>
+                  </HBox>
+               </right>
+            </BorderPane>
+         </top>
+         <center>
+            <TableView fx:id="tableView" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+              <columns>
+                <TableColumn fx:id="nameColumn" prefWidth="239.0" text="Name" />
+                <TableColumn fx:id="portColumn" minWidth="0.0" prefWidth="125.0" text="Port" />
+                  <TableColumn fx:id="ipColumn" maxWidth="1.7976931348623157E308" minWidth="0.0" prefWidth="235.0" text="IP" />
+              </columns>
+            </TableView>
+         </center>
+      </BorderPane>
+   </children>
+   <stylesheets>
+      <URL value="@../../css/main.css" />
+      <URL value="@../../css/core/core.css" />
+   </stylesheets>
+</StackPane>

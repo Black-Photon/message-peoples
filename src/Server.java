@@ -1,5 +1,8 @@
+package src;
+
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
@@ -9,7 +12,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 /**
  * Used as controller for a server.
@@ -24,7 +29,7 @@ import java.util.ArrayList;
  *
  */
 
-public class Server {
+public class Server implements Initializable{
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private ServerSocket server;
@@ -55,24 +60,27 @@ public class Server {
 	 * @param connection Connection to send message to
 	 */
 	private void sendMessage(String message, Connection connection){
-		if(message.equals("END")){
+		if(message.equals("")||message.equals(" ")) return;
+		silentSend("SERVER - "+message, connection);
+	}
+
+	private void silentSend(String message, Connection connection){
+		if(message.equals("")||message.equals(" ")) return;
+
+		if(message.endsWith("END")){
 			end = true;
 		}
 
 		try {
-			if(!(message.equals("")||message.equals(" "))){
-				if(isClient(message)) {
-					connection.getOutput().writeObject(message);
-					connection.getOutput().flush();
-				}else{
-					message = "SERVER - " + message;
-					connection.getOutput().writeObject(message);
-					connection.getOutput().flush();
-				}
-				//showMessage("SERVER - " + message);
+			if(isClient(message)) {
+				connection.getOutput().writeObject(message.substring(2));
+				connection.getOutput().flush();
+			}else{
+				connection.getOutput().writeObject(message);
+				connection.getOutput().flush();
 			}
 		}catch (IOException e) {
-			chatWindow.setText(chatWindow.getText() + "Error in sending message\n");
+			chatWindow.appendText("Error in sending message\n");
 		}
 	}
 
@@ -82,11 +90,7 @@ public class Server {
 	 * @return Whether the message is from the client
 	 */
 	private boolean isClient(String message){
-		try {
-			return message.substring(0, 8).equals("CLIENT -");
-		}catch(StringIndexOutOfBoundsException e){
-			return false;
-		}
+		return message.substring(0,2).equals("/c");
 	}
 
 	/**
@@ -126,18 +130,23 @@ public class Server {
 	 * @throws IOException When reading message sent
 	 */
 	private void whileChatting(Connection current) throws  IOException{
-		//System.out.println("Chatting");
-		String message = "Someone connected";
-		showMessage("SERVER - "+message);
-		sendAllMessage(message);
+		String message = "";
 		ableToType(true);
 		do{
 			try{
 				message = (String) current.getInput().readObject();
-				showMessage(message);
-				for(Connection connection: connections){
-					if(!connection.equals(current)){
-						sendMessage(message, connection);
+				if(message.endsWith("/u")){
+					String user = message.substring(0,message.length()-2);
+					current.setName(user);
+					message = user+" connected";
+					showMessage("SERVER - "+message);
+					sendAllMessage(message);
+				}else {
+					showMessage(message);
+					for (Connection connection : connections) {
+						if (!connection.equals(current)) {
+							sendMessage("/c" + message, connection);
+						}
 					}
 				}
 			}catch (EOFException e){
@@ -145,7 +154,7 @@ public class Server {
 			}catch (ClassNotFoundException e) {
 				showMessage("Unable to process received message");
 			}
-		}while(!message.equals("CLIENT - END"));
+		}while(!message.endsWith("END"));
 	}
 
 	/**
@@ -153,7 +162,7 @@ public class Server {
 	 * @param message Message to show
 	 */
 	private void showMessage(String message){
-		chatWindow.setText(chatWindow.getText()+message+"\n");
+		chatWindow.appendText(message+"\n");
 	}
 
 	/**
@@ -173,8 +182,8 @@ public class Server {
 			showMessage("Server Ended the Connection");
 			ableToType(false);
 		}else {
-			showMessage("SERVER - Someone Left");
-			sendAllMessage("Someone Left");
+			showMessage("SERVER - "+connection.getName()+" Left");
+			sendAllMessage(connection.getName()+" Left");
 			if (connections.size() == 0) {
 				ableToType(false);
 				startConnecting();
@@ -194,7 +203,11 @@ public class Server {
 	 * Start's the background processes running in a new thread
 	 */
 	@FXML
-	public void initialize() {
+	public void initialize(URL location, ResourceBundle resources) {
+		chatWindow.textProperty().addListener(e->{
+			chatWindow.setScrollTop(Double.MAX_VALUE);
+		});
+
 		Task task = new Task() {
 			@Override
 			protected Object call() throws Exception {
@@ -217,8 +230,10 @@ public class Server {
 	 */
 	@FXML
 	public void startSendMessage(){
-		showMessage("SERVER - "+userText.getText());
-		sendAllMessage(userText.getText());
+		String message = userText.getText();
+		if(message.equals("")||message.equals(" ")) return;
+		showMessage("SERVER - "+message);
+		sendAllMessage(message);
 		userText.setText("");
 	}
 

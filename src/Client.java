@@ -1,7 +1,12 @@
+package src;
+
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import other.Connection_Data;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -10,6 +15,8 @@ import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * Used as controller for a client.
@@ -17,23 +24,31 @@ import java.net.Socket;
  * <h2>FXML:</h2>
  * <h3>Vars:</h3>
  * TextField userText<br/>
- * TextArea chatWindow
+ * TextArea chatWindow<br/>
+ * Label name
  *
  * <h3>Methods:</h3>
  * startSendMessage sends whatever's in the TextField and clears it
  *
  */
 
-public class Client {
+public class Client implements Initializable{
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
 	private String message = "";
-	private final String serverIP = "127.0.0.1";
+	private String serverIP = "127.0.0.1";
+	private int port = 50000;
 	private Socket socket;
 	@FXML
 	public TextField userText;
 	@FXML
 	public TextArea chatWindow;
+	@FXML
+	public Label name;
+	private String user;
+
+	private static Client currentObject;
+	public static Connection_Data data;
 
 	/**
 	 * Starts the client background running. Called by initialize ONLY
@@ -52,24 +67,28 @@ public class Client {
 		}
 	}
 
+	public void onBackPressed(){
+		closeSystems();
+		//TODO Core_Controller.getThisObject().onMessagingMenuClick();
+	}
+
 	/**
 	 * Sends a message to server
 	 * @param message Message to send
 	 */
 	private void sendMessage(String message){
+		if(message.equals("")||message.equals(" ")) return;
+		message = user + " - "+message;
+		silentSend(message);
+		showMessage(message);
+	}
+	private void silentSend(String message){
+		if(message.equals("")||message.equals(" ")) return;
 		try {
-			if(message.equals("END")){
-				output.writeObject("CLIENT - END");
-				output.flush();
-				showMessage("CLIENT - END");
-			}else
-			if(!(message.equals("")||message.equals(" "))){
-				output.writeObject("CLIENT - " + message);
-				output.flush();
-				showMessage("CLIENT - " + message);
-			}
+			output.writeObject(message);
+			output.flush();
 		}catch (IOException e){
-			chatWindow.setText(chatWindow.getText()+"Error in sending message");
+			chatWindow.appendText("Error in sending message\n");
 		}
 	}
 
@@ -81,8 +100,8 @@ public class Client {
 	private void connectToServer() throws IOException {
 		try {
 			showMessage("Attempting Connection...");
-			socket = new Socket(InetAddress.getByName(serverIP), 6666);
-			System.out.println("Connected to port: " + 6666);
+			socket = new Socket(InetAddress.getByName(serverIP), port);
+			System.out.println("Connected to port: " + port);
 		}catch (ConnectException e){
 			showMessage("Could not connect");
 		}
@@ -103,6 +122,7 @@ public class Client {
 	 * @throws IOException When reading message sent
 	 */
 	private void whileChatting() throws  IOException{
+		silentSend(user+"/u");
 		ableToType(true);
 		do{
 			try{
@@ -111,7 +131,7 @@ public class Client {
 			}catch (ClassNotFoundException e){
 				showMessage("Unable to process received message");
 			}
-		}while(!message.equals("SERVER - END"));
+		}while(!message.endsWith("END"));
 	}
 
 	/**
@@ -119,7 +139,7 @@ public class Client {
 	 * @param message Message to show
 	 */
 	private void showMessage(String message){
-		chatWindow.setText(chatWindow.getText()+message+"\n");
+		chatWindow.appendText(message+"\n");
 	}
 
 	/**
@@ -141,6 +161,10 @@ public class Client {
 
 
 	}
+	public static void close(){
+		if(currentObject==null) return;
+		currentObject.closeSystems();
+	}
 
 	/**
 	 * Changes whether you are permitted to type
@@ -151,11 +175,47 @@ public class Client {
 	}
 
 	/**
-	 * Start's the background processes running in a new thread
+	 * Attempt's to send a message to all connected devices
 	 */
 	@FXML
-	public void initialize() {
+	public void startSendMessage(){
+		sendMessage(userText.getText());
+		userText.setText("");
+	}
 
+	/**
+	 * Start's the background processes running in a new thread
+	 */
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		user = "USER";
+
+		currentObject = this;
+		if(data!=null) {
+			serverIP = data.getIp();
+			port = data.getPort();
+			name.setText(data.getName());
+		}
+
+
+		chatWindow.textProperty().addListener(e->{
+			chatWindow.setScrollTop(Double.MAX_VALUE);
+		});
+
+		startEverything();
+	}
+
+	public static void setData(Connection_Data data){
+		Client.data = data;
+	}
+
+	@FXML
+	public void onConnectPressed(){
+		closeSystems();
+		startEverything();
+	}
+
+	private void startEverything(){
 		Task task = new Task() {
 			@Override
 			protected Object call() throws Exception {
@@ -170,15 +230,8 @@ public class Client {
 
 		Thread thread = new Thread(task);
 		thread.start();
-
 	}
+	public void scrollDown(){
 
-	/**
-	 * Attempt's to send a message to all connected devices
-	 */
-	@FXML
-	public void startSendMessage(){
-		sendMessage(userText.getText());
-		userText.setText("");
 	}
 }
