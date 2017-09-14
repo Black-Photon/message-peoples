@@ -17,6 +17,6 @@ public class MainClient extends Application{
 	 */
 	@Override
 	public void start(Stage primaryStage) throws IOException {
-		new Main().start(primaryStage, "Client.fxml");
+		new Main().start(primaryStage, "resources/fxml/Client.fxml");
 	}
 }

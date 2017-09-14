@@ -270,4 +270,15 @@ public class Server implements Initializable{
 				}
 		).start();
 	}
+
+	public void onBackPressed(){
+		//TODO closeSystems();
+		//TODO Core_Controller.getThisObject().onMessagingMenuClick();
+	}
+
+	@FXML
+	public void onConnectPressed(){
+		//TODO closeSystems();
+		//TODO startEverything();
+	}
 }

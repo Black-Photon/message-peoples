@@ -45,16 +45,13 @@
 .scroll-pane {
     -fx-background-color: #282828;
 }
-
 .scroll-bar:vertical{
     -fx-background-color:transparent;
 }
-
 .increment-button, .decrement-button {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
-
 .scroll-bar:vertical .track{
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -66,12 +63,10 @@
 .scroll-bar:horizontal{
     -fx-background-color:transparent;
 }
-
 .increment-button, .decrement-button {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
-
 .scroll-bar:horizontal .track{
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -80,21 +75,8 @@
     -fx-background-color: whitesmoke;
     -fx-background-radius: 5em;
 }
-
 .icon{
     -fx-pref-width: 7em;
-}
-#borderPane {
-    -fx-background-color: #282828;
-}
-.option{
-    -fx-text-fill: whitesmoke;
-}
-.option > .title {
-    -fx-background-color: -fx-box-border, -fx-inner-border, -fx-body-color;
-    -fx-background-insets: 0, 1, 2;
-    -fx-background-radius: 5px;
-    -fx-color: #282828;
 }
 .curved{
     -fx-background-radius: 10px;

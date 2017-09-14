@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import java.net.URL?>
-<StackPane prefHeight="158.0" prefWidth="366.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jOSeph_4.resources.controllers.core.Connection_Settings_Controller">
+<StackPane prefHeight="158.0" prefWidth="366.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="src.other.Connection_Settings_Controller">
    <children>
       <VBox prefHeight="200.0" prefWidth="600.0">
          <children>
@@ -96,7 +96,6 @@
       </VBox>
    </children>
    <stylesheets>
-      <URL value="@../../css/main.css" />
-      <URL value="@../../css/core/core.css" />
+      <URL value="/src/resources/css/main.css" />
    </stylesheets>
 </StackPane>
