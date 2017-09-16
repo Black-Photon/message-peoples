@@ -1,19 +1,24 @@
 package src.server;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import src.client.Client;
+import src.common.Connection_Data;
+import src.common.Main;
+import src.common.Start;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.ResourceBundle;
 
 /**
@@ -39,7 +44,10 @@ public class Server implements Initializable{
 	public TextField userText;
 	@FXML
 	public TextArea chatWindow;
+	@FXML
+	public Label name;
 	private static boolean end = false;
+	public static Connection_Data data;
 
 	/**
 	 * Starts the server background running. Called by initialize ONLY
@@ -111,7 +119,11 @@ public class Server implements Initializable{
 		if(connections.size()==0) {
 			showMessage("Waiting for Connection...");
 		}
-		socket = server.accept();
+		try {
+			socket = server.accept();
+		}catch (SocketException e){
+			System.out.println("Stopped attempting connection");
+		}
 	}
 
 	/**
@@ -154,7 +166,7 @@ public class Server implements Initializable{
 			}catch (ClassNotFoundException e) {
 				showMessage("Unable to process received message");
 			}
-		}while(!message.endsWith("END"));
+		}while(!message.endsWith("END") && !server.isClosed());
 	}
 
 	/**
@@ -170,6 +182,7 @@ public class Server implements Initializable{
 	 * @param connection Which connection to close
 	 */
 	private void closeConnection(Connection connection) {
+		if(!connection.getSocket().isClosed())
 		try {
 			connection.getSocket().close();
 			connection.getInput().close();
@@ -190,6 +203,16 @@ public class Server implements Initializable{
 			}
 		}
 	}
+	private void closeAllConnections(){
+		for(int i = 0; i<connections.size(); i++){
+			closeConnection(connections.get(0));
+		}
+		try {
+			server.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
 
 	/**
 	 * Changes whether you are permitted to type
@@ -204,6 +227,18 @@ public class Server implements Initializable{
 	 */
 	@FXML
 	public void initialize(URL location, ResourceBundle resources) {
+		Start.getStage().setOnCloseRequest(e->{
+			System.out.println("Closing Server");
+			//closeAllConnections();
+			Start.getStage().close();
+			Platform.exit();
+			System.exit(0);
+		});
+
+		if(data!=null) {
+			name.setText(data.getName());
+		}
+
 		chatWindow.textProperty().addListener(e->{
 			chatWindow.setScrollTop(Double.MAX_VALUE);
 		});
@@ -259,6 +294,8 @@ public class Server implements Initializable{
 							connections.add(connection);
 							startConnecting();
 							whileChatting(connection);
+						} catch (SocketException e){
+							System.out.println("Stopped attempting stream connections");
 						} catch (EOFException e) {
 							showMessage("Server ended the socket");
 						} catch (IOException e) {
@@ -272,13 +309,19 @@ public class Server implements Initializable{
 	}
 
 	public void onBackPressed(){
-		//TODO closeSystems();
-		//TODO Core_Controller.getThisObject().onMessagingMenuClick();
+		endEverything();
+		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
 	}
 
-	@FXML
-	public void onConnectPressed(){
-		//TODO closeSystems();
-		//TODO startEverything();
+	public void onEndPressed(){
+		endEverything();
+	}
+	private void endEverything(){
+		end = true;
+		closeAllConnections();
+	}
+
+	public static void setData(Connection_Data data){
+		Server.data = data;
 	}
 }

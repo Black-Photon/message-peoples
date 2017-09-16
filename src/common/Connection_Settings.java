@@ -16,7 +16,13 @@ public class Connection_Settings extends messageBoxes {
 
 	public ArrayList<Object> createWindow(){
 		stage = new Stage();
-		//TODO Main.createWindow("core/Connection_Settings.fxml", stage, "Connection Settings");
+
+		if(Start.getSide()==Sides.CLIENT)
+			Main.createWindow("Connection_Settings.fxml", stage, "Connection Settings");
+		else
+		if(Start.getSide()==Sides.SERVER)
+			Main.createWindow("Connection_Server_Settings.fxml", stage, "Connection Settings");
+
 		stage.initModality(Modality.APPLICATION_MODAL);
 		stage.showAndWait();
 

@@ -39,6 +39,12 @@ public class Connection_Settings_Controller implements Initializable{
 	public void initialize(URL location, ResourceBundle resources) {
 		ipArray = new ArrayList<>();
 		limits = new ArrayList<>();
+		if(serverside()){
+			ip1Box = new TextField();
+			ip2Box = new TextField();
+			ip3Box = new TextField();
+			ip4Box = new TextField();
+		}
 		ipArray.add(ip1Box);
 		limits.add(3);
 		ipArray.add(ip2Box);
@@ -55,6 +61,7 @@ public class Connection_Settings_Controller implements Initializable{
 		ip2Box.setText(connection_data.getIpArray().get(1).toString());
 		ip3Box.setText(connection_data.getIpArray().get(2).toString());
 		ip4Box.setText(connection_data.getIpArray().get(3).toString());
+
 		ipPortBox.setText(Integer.toString(connection_data.getPort()));
 	}
 
@@ -71,10 +78,20 @@ public class Connection_Settings_Controller implements Initializable{
 		if(!confirmTextSize()){
 			return;
 		}
-		for(TextField i: ipArray){
+		if(clientside())/* then */for(TextField i: ipArray){
 			if(i.getText().equals("")){
 				new Error("Please Enter Info");
 				return;
+			}
+		}else
+		if(serverside())/* then */for(TextField i: ipArray){
+			if(i.getText().equals("")){
+				if(i.equals(ipPortBox)) {
+					new Error("Please Enter Info");
+					return;
+				}else{
+					i.setText("0");
+				}
 			}
 		}
 
@@ -87,9 +104,11 @@ public class Connection_Settings_Controller implements Initializable{
 		data.add(success);
 		data.add(nameBox.getText());
 		ArrayList<Integer> ipNameArray = new ArrayList();
+
 		for(TextField i: ipArray){
 			ipNameArray.add(Integer.parseInt(i.getText()));
 		}
+
 		data.add(ipNameArray);
 		Connection_Settings.getCurrentObject().setData(data);
 		Connection_Settings.getCurrentObject().exit();
@@ -97,35 +116,47 @@ public class Connection_Settings_Controller implements Initializable{
 
 	@FXML
 	void confirmText(){
+		if(clientside())
 		for(int i = 0; i<ipArray.size(); i++){
-			TextField thisField = ipArray.get(i);
+			confirm(ipArray.get(i), limits.get(i));
+		}else
+		if(serverside()) confirm(ipPortBox, limits.get(4));
+	}
+	private void confirm(TextField textField, int limit){
+		if(textField.getText().length()>limit){
+			textField.setText(textField.getText(0, limit));
+		}
 
-			if(thisField.getText().length()>limits.get(i)){
-				thisField.setText(thisField.getText(0, limits.get(i)));
-			}
-
-			try{
-				int x = Integer.parseInt(thisField.getText());
-			}catch (NumberFormatException e){
-				int end = thisField.getLength()-1;
-				if(end>=0){
-					thisField.setText(thisField.getText(0, end));
-				}
+		try{
+			int x = Integer.parseInt(textField.getText());
+		}catch (NumberFormatException e){
+			int end = textField.getLength()-1;
+			if(end>=0){
+				textField.setText(textField.getText(0, end));
 			}
 		}
 	}
 
 	private boolean confirmTextSize(){
 		for(int i = 0; i<ipArray.size();i++){
-			if(ipArray.get(i).getText().length()>limits.get(i)){
-				new Error("Please fully complete all boxes",500);
-				return false;
-			}
+			if(clientside() || i==4)
+//				then
+				if(ipArray.get(i).getText().length()>limits.get(i)){
+					new Error("Please fully complete all boxes",500);
+					return false;
+				}
 		}
 		return true;
 	}
 
 	public static void setConnection_data(Connection_Data connection_data) {
 		Connection_Settings_Controller.connection_data = connection_data;
+	}
+
+	private static boolean serverside(){
+		return Start.getSide()==Sides.SERVER;
+	}
+	private static boolean clientside(){
+		return Start.getSide()==Sides.CLIENT;
 	}
 }

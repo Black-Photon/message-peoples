@@ -1,5 +1,6 @@
 package src.client;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -7,6 +8,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import src.common.Connection_Data;
+import src.common.Main;
+import src.common.Start;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -59,7 +62,7 @@ public class Client implements Initializable{
 			setupStreams();
 			whileChatting();
 		} catch (EOFException e) {
-			showMessage("Client ended the connection");
+			showMessage("Server ended the connection");
 		} catch (IOException e){
 			e.printStackTrace();
 		} finally {
@@ -69,7 +72,7 @@ public class Client implements Initializable{
 
 	public void onBackPressed(){
 		closeSystems();
-		//TODO Core_Controller.getThisObject().onMessagingMenuClick();
+		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
 	}
 
 	/**
@@ -148,6 +151,7 @@ public class Client implements Initializable{
 	private void closeSystems(){
 
 		ableToType(false);
+		if(!socket.isClosed())
 		try{
 			output.close();
 			input.close();
@@ -188,6 +192,14 @@ public class Client implements Initializable{
 	 */
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		Start.getStage().setOnCloseRequest(e->{
+			System.out.println("Closing Client");
+			closeSystems();
+			Start.getStage().close();
+			Platform.exit();
+			System.exit(0);
+		});
+
 		user = "USER";
 
 		currentObject = this;
@@ -211,7 +223,7 @@ public class Client implements Initializable{
 
 	@FXML
 	public void onConnectPressed(){
-		closeSystems();
+		if(socket!=null) if(!socket.isClosed()) closeSystems();
 		startEverything();
 	}
 
@@ -230,8 +242,5 @@ public class Client implements Initializable{
 
 		Thread thread = new Thread(task);
 		thread.start();
-	}
-	public void scrollDown(){
-
 	}
 }

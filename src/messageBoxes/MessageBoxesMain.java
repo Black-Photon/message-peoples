@@ -1,6 +1,7 @@
 package src.messageBoxes;
 
 import javafx.stage.Stage;
+import src.common.Windows;
 
 public class MessageBoxesMain {
 	/**
@@ -10,6 +11,6 @@ public class MessageBoxesMain {
 	 * @param title Title of window
 	 */
 	public static void createWindow(String location, Stage window, String title){
-		//TODO new Windows().createWindow(location, window, title, "jOSeph_4/messageBoxes/resources/fxml/");
+		 new Windows().createWindow(location, window, title, "src/messageBoxes/resources/fxml/");
 	}
 }

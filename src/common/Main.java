@@ -9,6 +9,9 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class Main {
+
+	private static final Windows windows = new Windows();
+
 	/**
 	 * Contains all the common info so similar client and server functions can be called when creating the window. Call as first function.
 	 *
@@ -27,5 +30,9 @@ public class Main {
 		primaryStage.setOnCloseRequest(e -> {primaryStage.close(); Platform.exit(); System.exit(0);});
 		primaryStage.show();
 
+	}
+
+	public static void createWindow(String location, Stage window, String title){
+		windows.createWindow(location, window, title,"src/resources/fxml/");
 	}
 }

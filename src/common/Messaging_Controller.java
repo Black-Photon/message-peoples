@@ -7,6 +7,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import src.client.Client;
+import src.server.Server;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -28,18 +30,29 @@ public class Messaging_Controller implements Initializable{
 
 	private ObservableList tableData;
 	private ArrayList<Connection_Data> arrayList;
+	private MessagingFiles files;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		nameColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.4));
-		portColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.2));
-		ipColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.4));
+		if(clientside()) {
+			nameColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.4));
+			portColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.2));
+			ipColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.4));
+		}else
+
+		if(serverside()) {
+			nameColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.7));
+			portColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.3));
+			ipColumn.setMaxWidth(0);
+		}
 
 		nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 		portColumn.setCellValueFactory(new PropertyValueFactory<>("port"));
 		ipColumn.setCellValueFactory(new PropertyValueFactory<>("ip"));
 
-		//TODO arrayList = Variable.getMessagingFiles().readMessagingConfig("messaging_config.txt");
+		files = new MessagingFiles();
+
+		arrayList = files.readMessagingConfig("messaging_config.txt");
 		refresh();
 
 	}
@@ -57,7 +70,15 @@ public class Messaging_Controller implements Initializable{
 	void onPressJoin() {
 		Connection_Data data = tableView.getSelectionModel().getSelectedItem();
 		if(data==null) return;
-		//TODO Core_Controller.getThisObject().setMessagingPane(data);
+		if(clientside()){
+			Client.setData(data);
+			Main.createWindow("Client.fxml" ,Start.getStage(), "Messaging");
+		}else
+		if(serverside()){
+			Server.setData(data);
+			Main.createWindow("Server.fxml" ,Start.getStage(), "Messaging");
+		}
+
 	}
 	@FXML
 	void onPressEdit() {
@@ -78,10 +99,15 @@ public class Messaging_Controller implements Initializable{
 		refresh();
 	}
 
+	@FXML
+	void onPressBack(){
+		Main.createWindow("Main.fxml", Start.getStage(), "Messaging");
+	}
+
 	private void refresh(){
 		tableData = FXCollections.observableArrayList(arrayList);
 		tableView.setItems(tableData);
-		//TODO Variable.getMessagingFiles().saveMessagingConfig("messaging_config.txt", arrayList);
+		files.saveMessagingConfig("messaging_config.txt", arrayList);
 	}
 
 	private void addEntry(ArrayList data){
@@ -93,5 +119,10 @@ public class Messaging_Controller implements Initializable{
 		refresh();
 	}
 
-
+	private static boolean serverside(){
+		return Start.getSide()==Sides.SERVER;
+	}
+	private static boolean clientside(){
+		return Start.getSide()==Sides.CLIENT;
+	}
 }

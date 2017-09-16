@@ -15,22 +15,22 @@
     -fx-font-size: 11pt;
     -fx-font-family: serif;
 }
-#green:hover{
+.green:hover{
     -fx-background-color: green;
 }
-#red:hover{
+.red:hover{
     -fx-background-color: firebrick;
 }
-#green:pressed{
+.green:pressed{
     -fx-background-color: lightgreen;
 }
-#red:pressed{
+.red:pressed{
     -fx-background-color: tomato;
 }
-#medium{
+.medium{
     -fx-font-size: 15pt;
 }
-#large{
+.large{
     -fx-font-size: 20pt;
     -fx-font-weight: bold;
 }

@@ -43,7 +43,7 @@
                   </Label>
                </right>
                <center>
-                  <Button mnemonicParsing="false" onAction="#onConnectPressed" styleClass="curved" text="CONNECT" BorderPane.alignment="CENTER" />
+                  <Button mnemonicParsing="false" onAction="#onEndPressed" styleClass="curved" text="Button" BorderPane.alignment="CENTER" />
                </center>
             </BorderPane>
          </top>
