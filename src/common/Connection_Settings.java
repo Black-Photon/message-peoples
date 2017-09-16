@@ -1,4 +1,4 @@
-package src.other;
+package src.common;
 
 import javafx.stage.Modality;
 import javafx.stage.Stage;

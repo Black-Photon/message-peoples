@@ -1,4 +1,4 @@
-package src.other;
+package src.common;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -7,6 +7,7 @@ import javafx.scene.control.TextField;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+
 import src.messageBoxes.Error;
 
 public class Connection_Settings_Controller implements Initializable{
