@@ -15,10 +15,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.URL;
+import java.net.*;
 import java.util.ResourceBundle;
 
 /**
@@ -59,6 +56,7 @@ public class Client implements Initializable{
 	private void startRunning() {
 		try {
 			connectToServer();
+			if(socket==null) return;
 			setupStreams();
 			whileChatting();
 		} catch (EOFException e) {
@@ -71,7 +69,7 @@ public class Client implements Initializable{
 	}
 
 	public void onBackPressed(){
-		closeSystems();
+		if(socket!=null) if(!socket.isClosed()) closeSystems();
 		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
 	}
 
@@ -101,6 +99,7 @@ public class Client implements Initializable{
 	 * @throws IOException Thrown in connection
 	 */
 	private void connectToServer() throws IOException {
+		socket = null;
 		try {
 			showMessage("Attempting Connection...");
 			socket = new Socket(InetAddress.getByName(serverIP), port);
@@ -133,6 +132,9 @@ public class Client implements Initializable{
 				showMessage(message);
 			}catch (ClassNotFoundException e){
 				showMessage("Unable to process received message");
+			}catch (SocketException e){
+				System.out.println("Socket Closed");
+				break;
 			}
 		}while(!message.endsWith("END"));
 	}
@@ -223,8 +225,9 @@ public class Client implements Initializable{
 
 	@FXML
 	public void onConnectPressed(){
-		if(socket!=null) if(!socket.isClosed()) closeSystems();
-		startEverything();
+		if(socket==null || socket.isClosed()){
+			startEverything();
+		}
 	}
 
 	private void startEverything(){

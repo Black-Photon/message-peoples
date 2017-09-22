@@ -11,6 +11,7 @@ import src.client.Client;
 import src.common.Connection_Data;
 import src.common.Main;
 import src.common.Start;
+import src.messageBoxes.Error;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -123,6 +124,7 @@ public class Server implements Initializable{
 			socket = server.accept();
 		}catch (SocketException e){
 			System.out.println("Stopped attempting connection");
+			socket = null;
 		}
 	}
 
@@ -165,6 +167,8 @@ public class Server implements Initializable{
 				break;
 			}catch (ClassNotFoundException e) {
 				showMessage("Unable to process received message");
+			}catch (Exception e){
+				new Error("ERROR!!! NEW EXCEPTION!! #4242", 500);
 			}
 		}while(!message.endsWith("END") && !server.isClosed());
 	}
@@ -276,6 +280,7 @@ public class Server implements Initializable{
 	 * Handles every connection. Only call with intent attempt to connect to a new device. Self-Sustaining (Recursive, in order to allow infinite connections)
 	 */
 	private void startConnecting(){
+		System.out.println(Thread.currentThread()+"a");
 		new Thread(
 				new Task() {
 					@Override
@@ -284,16 +289,26 @@ public class Server implements Initializable{
 					}
 					@Override
 					public void run() {
+						System.out.println(Thread.currentThread()+"b");
 						Connection connection = new Connection();
 						try {
+							System.out.println(Thread.currentThread()+"c");
 							waitForConnection();
+							if(socket==null){
+								System.out.println(Thread.currentThread()+" Ending");
+								return;
+							}
 							connection.setSocket(socket);
+							System.out.println(Thread.currentThread()+"d");
 							setupStreams();
 							connection.setInput(input);
 							connection.setOutput(output);
 							connections.add(connection);
+							System.out.println(Thread.currentThread()+"e");
 							startConnecting();
+							System.out.println(Thread.currentThread()+"f");
 							whileChatting(connection);
+							System.out.println(Thread.currentThread()+"g");
 						} catch (SocketException e){
 							System.out.println("Stopped attempting stream connections");
 						} catch (EOFException e) {
@@ -301,7 +316,8 @@ public class Server implements Initializable{
 						} catch (IOException e) {
 							e.printStackTrace();
 						} finally {
-							closeConnection(connection);
+							System.out.println(Thread.currentThread()+"h");
+							if(!connection.getSocket().isClosed()) closeConnection(connection);
 						}
 					}
 				}
@@ -316,12 +332,13 @@ public class Server implements Initializable{
 	public void onEndPressed(){
 		endEverything();
 	}
+
 	private void endEverything(){
-		end = true;
 		closeAllConnections();
 	}
 
 	public static void setData(Connection_Data data){
 		Server.data = data;
 	}
+
 }
