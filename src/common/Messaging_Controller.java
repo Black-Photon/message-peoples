@@ -9,6 +9,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import src.client.Client;
 import src.server.Server;
+import src.server.tempServer;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public class Messaging_Controller implements Initializable{
 			Main.createWindow("Client.fxml" ,Start.getStage(), "Messaging");
 		}else
 		if(serverside()){
-			Server.setData(data);
+			tempServer.setData(data);
 			Main.createWindow("Server.fxml" ,Start.getStage(), "Messaging");
 		}
 
