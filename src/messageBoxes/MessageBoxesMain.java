@@ -1,7 +1,7 @@
-package src.messageBoxes;
+package messageBoxes;
 
 import javafx.stage.Stage;
-import src.common.Windows;
+import common.Windows;
 
 public class MessageBoxesMain {
 	/**

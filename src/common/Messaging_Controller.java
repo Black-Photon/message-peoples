@@ -1,4 +1,4 @@
-package src.common;
+package common;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -7,9 +7,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import src.client.Client;
-import src.server.Server;
-import src.server.tempServer;
+import client.Client;
+import server.Server;
+import server.tempServer;
 
 import java.net.URL;
 import java.util.ArrayList;

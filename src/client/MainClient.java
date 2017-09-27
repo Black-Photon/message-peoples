@@ -1,8 +1,8 @@
-package src.client;
+package client;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import src.common.Main;
+import common.Main;
 
 import java.io.IOException;
 

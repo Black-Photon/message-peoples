@@ -1,4 +1,4 @@
-package src.messageBoxes.resources.controllers;
+package messageBoxes.resources.controllers;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -8,7 +8,7 @@ import javafx.scene.layout.BorderPane;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import src.messageBoxes.Error;
+import messageBoxes.Error;
 
 public class Error_Controller implements Initializable{
 	@FXML

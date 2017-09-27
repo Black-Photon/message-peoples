@@ -1,4 +1,4 @@
-package src.server;
+package server;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -7,10 +7,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import src.common.Connection_Data;
-import src.common.Main;
-import src.common.Start;
-import src.messageBoxes.Error;
+import common.Connection_Data;
+import common.Main;
+import common.Start;
+import messageBoxes.Error;
 
 import java.io.EOFException;
 import java.io.IOException;

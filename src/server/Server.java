@@ -1,4 +1,4 @@
-package src.server;
+package server;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -7,10 +7,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import src.common.Special;
-import src.common.Start;
-import src.common.State;
-import src.messageBoxes.ConfirmBox;
+import common.Special;
+import common.Start;
+import common.State;
+import messageBoxes.ConfirmBox;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -96,7 +96,7 @@ public class Server implements Initializable{
 
 					}
 
-					if(state == src.common.State.END || state == src.common.State.ERROR) return;
+					if(state == common.State.END || state == common.State.ERROR) return;
 				}
 			}
 		}).start();

@@ -1,4 +1,4 @@
-package src.common;
+package common;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

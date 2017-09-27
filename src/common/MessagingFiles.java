@@ -1,6 +1,6 @@
-package src.common;
+package common;
 
-import src.messageBoxes.Error;
+import messageBoxes.Error;
 
 import java.io.File;
 import java.io.IOException;

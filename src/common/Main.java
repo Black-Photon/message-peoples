@@ -1,4 +1,4 @@
-package src.common;
+package common;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -33,6 +33,6 @@ public class Main {
 	}
 
 	public static void createWindow(String location, Stage window, String title){
-		windows.createWindow(location, window, title,"src/resources/fxml/");
+		windows.createWindow(location, window, title,"resources/fxml/");
 	}
 }
