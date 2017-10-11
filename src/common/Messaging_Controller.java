@@ -76,7 +76,7 @@ public class Messaging_Controller implements Initializable{
 			Main.createWindow("Client.fxml" ,Start.getStage(), "Messaging");
 		}else
 		if(serverside()){
-			tempServer.setData(data);
+			Server.setData(data);
 			Main.createWindow("Server.fxml" ,Start.getStage(), "Messaging");
 		}
 

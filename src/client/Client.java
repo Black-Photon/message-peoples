@@ -31,6 +31,7 @@ public class Client implements Initializable{
 	//Global Variables
 	private static Connection_Data data;
 	private static State state;
+	private final String username = "CLIENT";
 
 	//FXML Vars
 	@FXML private TextField userText;
@@ -70,7 +71,7 @@ public class Client implements Initializable{
 			}
 
 			//TODO Review
-			System.out.println("Closing Server");
+			System.out.println("Closing Client");
 			Start.getStage().close();
 			Platform.exit();
 			System.exit(0);
@@ -80,8 +81,6 @@ public class Client implements Initializable{
 	}
 	private void startConnection(){
 		if(isEndOrError()) return;
-
-		showMessage(INFO, "Waiting for connection...");
 
 		new Thread(new Task() {
 			@Override
@@ -219,23 +218,45 @@ public class Client implements Initializable{
 	//Input/Output
 	private void sendMessage(Special type, String message){
 		try {
-			if(type!=null)
-				output.writeObject(Main.getSpecialCode()+type.toString());
-			output.flush();
-			output.writeObject(message);
-			output.flush();
+			if(type==null) {
+				output.writeObject(Main.getSpecialCode() + type.toString());
+				output.flush();
+				showMessage(CLIENT, message);
+			}
+			switch(type) {
+				case JOIN:
+					output.writeObject(Main.getSpecialCode() + type.toString());
+					output.flush();
+					break;
+				case USER:
+					output.writeObject(Main.getSpecialCode() + type.toString());
+					output.flush();
+					if (message == null) return;
+					output.writeObject(message);
+					output.flush();
+					break;
+				default:
+					output.writeObject(Main.getSpecialCode() + type.toString());
+					output.flush();
+					if (message == null) return;
+					output.writeObject(message);
+					output.flush();
 
-			if(type!=INFO && type!=SERVER && type!=CLIENT) type = CLIENT;
-			showMessage(type, message);
-		}catch(IOException e){
+					if (type != INFO && type != SERVER && type != CLIENT) type = CLIENT;
+					showMessage(type, message);
+			}
+		}catch(IOException e) {
 			System.out.println("Couldn't send message");
 			e.printStackTrace();
 		}
 	}
 	private void showMessage(Special type, String message){
 		switch(type){
-			case INFO: case CLIENT:
+			case INFO:
 				chatWindow.appendText(message+"\n");
+				break;
+			case CLIENT:
+				chatWindow.appendText(username + " - " + message+"\n");
 				break;
 			case SERVER:
 				chatWindow.appendText("SERVER - "+message+"\n");
@@ -245,8 +266,8 @@ public class Client implements Initializable{
 		}
 	}
 	private void waitForMessage() throws IOException{
+		sendMessage(USER, username); //TODO Fix names
 		sendMessage(JOIN, null);
-		sendMessage(USER, final_data.getName().toUpperCase());
 		ableToType(true);
 		String message, special;
 
@@ -292,7 +313,7 @@ public class Client implements Initializable{
 						break;
 					case INFO:
 						message = nextString();
-						showMessage(INFO, nextString());
+						showMessage(INFO, message);
 						break;
 					case SERVER:
 						message = nextString();
@@ -330,7 +351,16 @@ public class Client implements Initializable{
 		state = END;
 		waitForConnectionClose();
 		state = START;
-		startConnection();
+		new Thread(new Task() {
+			@Override
+			protected Object call() throws Exception {
+				return null;
+			}
+
+			public void run(){
+				startConnection();
+			}
+		}).start();
 	}
 
 	@FXML void startSendMessage() {

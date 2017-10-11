@@ -1,6 +1,7 @@
 package server;
 
-import common.Main;
+import client.Client;
+import common.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -8,9 +9,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import common.Special;
-import common.Start;
-import common.State;
 import messageBoxes.ConfirmBox;
 import messageBoxes.Error;
 
@@ -35,6 +33,7 @@ public class Server implements Initializable{
 	private Connection connection;
 	private State state;
 	private static State globalState;
+	private static Connection_Data data;
 
 	//FXML Vars
 	@FXML private TextField userText;
@@ -51,10 +50,12 @@ public class Server implements Initializable{
 	//Initialization
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
+		name.setText(data.getName());
 		globalState = RUNNING;
 		state = START;
+		connections = new ArrayList<>();
 		try {
-			server = new ServerSocket();
+			server = new ServerSocket(data.getPort(), 100);
 		}catch (IOException e){
 			state = ERROR;
 			System.out.println("Could not establish Server");
@@ -71,6 +72,12 @@ public class Server implements Initializable{
 				System.out.println("Error");
 				exception.printStackTrace();
 			}
+
+			//TODO Review
+			System.out.println("Closing Client");
+			Start.getStage().close();
+			Platform.exit();
+			System.exit(0);
 		});
 		startConnection();
 	}
@@ -97,8 +104,9 @@ public class Server implements Initializable{
 	}
 	private void runtime() throws IOException{
 		connection = new Connection();
-		connections.add(connection);
 		connection.setName("USER");
+
+		int index = -1;
 
 		//Does each event before checking the state for an END or ERROR to exit, ensuring wherever it is, it will exit out when needed
 		ForLoop:
@@ -109,13 +117,15 @@ public class Server implements Initializable{
 					break;
 				case 1:
 					setupStreams();
+					connections.add(connection);
 					state = RUNNING;
 					break;
 				case 2:
 					if(!isEndOrError()) startConnection();
+					index = connections.indexOf(connection);
 					break;
 				case 3:
-					waitForMessage();
+					waitForMessage(index);
 					break;
 				default:
 					break ForLoop;
@@ -194,9 +204,10 @@ public class Server implements Initializable{
 		}
 		return null;
 	}
-	private String nextString(){
+	private String nextString(int index){
 		try {
-			return (String) connection.getInput().readObject();
+			String out = (String) connections.get(index).getInput().readObject();
+			return out;
 		}catch(ClassNotFoundException | IOException e){
 			e.printStackTrace();
 		}
@@ -228,11 +239,13 @@ public class Server implements Initializable{
 			if(type!=null)
 				connection.getOutput().writeObject(Main.getSpecialCode()+type.toString());
 			connection.getOutput().flush();
+			if(message==null) return;
+			if(type==SERVER_UP) return;
 			connection.getOutput().writeObject(message);
 			connection.getOutput().flush();
 
 			if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
-			showMessage(type, message);
+			if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 		}catch(IOException e){
 			System.out.println("Couldn't send message");
 			e.printStackTrace();
@@ -241,56 +254,55 @@ public class Server implements Initializable{
 	private void showMessage(Special type, String message){
 		switch(type){
 			case INFO:
-				chatWindow.appendText(message);
+				chatWindow.appendText(message+"\n");
 				break;
 			case SERVER:
-				chatWindow.appendText("SERVER - "+message);
+				chatWindow.appendText("SERVER - "+message+"\n");
 				break;
 			case CLIENT:
-				chatWindow.appendText(connection.getName()+" - "+message);
+				chatWindow.appendText(connection.getName()+" - "+message+"\n");
 			default:
 				System.out.println("Unexpected Special type");
 		}
 	}
-	private void waitForMessage() throws IOException{
+	private void waitForMessage(int index) throws IOException{
 		sendAllMessage(SERVER_UP, null);
 		ableToType(true);
 		String message, special;
 		
 		while (!isEndOrError()) {
-			special = nextString();
+			special = nextString(index);
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
-				
-				
+
 				switch(specialFromString(special)){
 					case USER:
-						String name = nextString();
-						connection.setName(name);
+						String name = nextString(index);
+						connections.get(index).setName(name);
 						break;
 					case JOIN:
-						sendAllMessage(INFO, connection.getName()+" has joined");
+						sendAllMessage(INFO, connections.get(index).getName()+" has joined");
 						break;
 					case CLIENT_END:
-						sendAllMessage(CLIENT_END, connection.getName()+" ended the connection");
+						sendAllMessage(CLIENT_END, connections.get(index).getName()+" ended the connection");
 						globalState = END;
 						state = END;
 						return;
 					case CRASH:
-						sendAllMessage(INFO, connection.getName()+" crashed");
+						sendAllMessage(INFO, connections.get(index).getName()+" crashed");
 						state = END;
 						return;
 					case USER_EXIT:
-						sendAllMessage(INFO, connection.getName()+" has left");
+						sendAllMessage(INFO, connections.get(index).getName()+" has left");
 						break;
 					case INFO:
-						message = nextString();
-						sendOthersMessage(INFO, message, connection);
+						message = nextString(index);
+						sendOthersMessage(INFO, message, connections.get(index));
 						break;
 					case CLIENT:
-						message = nextString();
-						sendOthersMessage(FORWARD, connection.getName(), connection);
-						sendOthersMessage(CLIENT, message, connection);
+						message = nextString(index);
+						sendOthersMessage(FORWARD, connections.get(index).getName(), connections.get(index));
+						sendOthersMessage(CLIENT, message, connections.get(index));
 						break;
 					default:
 						System.out.println("Don't know what to do with this Special");
@@ -323,6 +335,11 @@ public class Server implements Initializable{
 	}
 	@FXML void startSendMessage() {
 		sendAllMessage(SERVER, userText.getText());
+		userText.setText("");
 	}
 
+	//Getters and Setters
+	public static void setData(Connection_Data data){
+		Server.data = data;
+	}
 }
