@@ -11,6 +11,6 @@ public class MessageBoxesMain {
 	 * @param title Title of window
 	 */
 	public static void createWindow(String location, Stage window, String title){
-		 new Windows().createWindow(location, window, title, "src/messageBoxes/resources/fxml/");
+		 new Windows().createWindow(location, window, title, "messageBoxes/resources/fxml/");
 	}
 }

@@ -61,13 +61,16 @@ public class Server implements Initializable{
 			return;
 		}
 		Start.getStage().setOnCloseRequest(e->{
-			if(!new ConfirmBox("Are you sure you want to exit").getAnswer()) return;
-
-			//TODO Review
-			System.out.println("Closing Server");
-			Start.getStage().close();
-			Platform.exit();
-			System.exit(0);
+			try {
+				boolean answer = !new ConfirmBox("Are you sure you want to exit").getAnswer();
+				if (answer){
+					e.consume();
+					return;
+				}
+			}catch(Exception exception){
+				System.out.println("Error");
+				exception.printStackTrace();
+			}
 		});
 		startConnection();
 	}
@@ -223,7 +226,7 @@ public class Server implements Initializable{
 	private void sendMessage(Special type, String message, Connection connection){
 		try {
 			if(type!=null)
-				connection.getOutput().writeObject(Main.getSpecialCode()+type.name());
+				connection.getOutput().writeObject(Main.getSpecialCode()+type.toString());
 			connection.getOutput().flush();
 			connection.getOutput().writeObject(message);
 			connection.getOutput().flush();
@@ -278,7 +281,7 @@ public class Server implements Initializable{
 						state = END;
 						return;
 					case USER_EXIT:
-						sendAllMessage(INFO, connection.getName()+" has joined");
+						sendAllMessage(INFO, connection.getName()+" has left");
 						break;
 					case INFO:
 						message = nextString();
@@ -286,6 +289,7 @@ public class Server implements Initializable{
 						break;
 					case CLIENT:
 						message = nextString();
+						sendOthersMessage(FORWARD, connection.getName(), connection);
 						sendOthersMessage(CLIENT, message, connection);
 						break;
 					default:
