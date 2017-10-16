@@ -252,6 +252,9 @@ public class Server implements Initializable{
 		}
 	}
 	private void showMessage(Special type, String message){
+		showMessage(type, message, connections.indexOf(connection));
+	}
+	private void showMessage(Special type, String message, int index){
 		switch(type){
 			case INFO:
 				chatWindow.appendText(message+"\n");
@@ -260,7 +263,7 @@ public class Server implements Initializable{
 				chatWindow.appendText("SERVER - "+message+"\n");
 				break;
 			case CLIENT:
-				chatWindow.appendText(connection.getName()+" - "+message+"\n");
+				chatWindow.appendText(connections.get(index).getName()+" - "+message+"\n");
 			default:
 				System.out.println("Unexpected Special type");
 		}
@@ -303,6 +306,7 @@ public class Server implements Initializable{
 						message = nextString(index);
 						sendOthersMessage(FORWARD, connections.get(index).getName(), connections.get(index));
 						sendOthersMessage(CLIENT, message, connections.get(index));
+						showMessage(CLIENT, message, 0);
 						break;
 					default:
 						System.out.println("Don't know what to do with this Special");
@@ -334,7 +338,15 @@ public class Server implements Initializable{
 		//TODO Close all threads required???
 	}
 	@FXML void startSendMessage() {
-		sendAllMessage(SERVER, userText.getText());
+		String message = userText.getText();
+		for(char i: message.toCharArray()){
+			if(i==' ') message = message.substring(1);
+		}
+		if(message.equals("")){
+			userText.setText("");
+			return;
+		}
+		sendAllMessage(SERVER, message);
 		userText.setText("");
 	}
 

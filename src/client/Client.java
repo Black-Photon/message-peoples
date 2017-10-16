@@ -71,7 +71,7 @@ public class Client implements Initializable{
 			}
 
 			//TODO Review
-			System.out.println("Closing Client");
+			System.out.println("Closing Server");
 			Start.getStage().close();
 			Platform.exit();
 			System.exit(0);
@@ -117,9 +117,23 @@ public class Client implements Initializable{
 					break ForLoop;
 			}
 
-			if(isEndOrError()) return;
+			if(isEnd()){
+				sendMessage(USER_EXIT, "");
+				closeConnection();
+				return;
+			}
+			if(isError()){
+				sendMessage(CRASH, "");
+				closeConnection();
+				return;
+			}
 		}
-		if(isEndOrError()){
+		if(isEnd()){
+			sendMessage(USER_EXIT, "");
+			closeConnection();
+		}
+		if(isError()){
+			sendMessage(CRASH, "");
 			closeConnection();
 		}
 	}
@@ -190,6 +204,7 @@ public class Client implements Initializable{
 		try {
 			return (String) input.readObject();
 		}catch(ClassNotFoundException | IOException e){
+			if(isEndOrError()) return "";
 			e.printStackTrace();
 		}
 		return null;
@@ -205,6 +220,7 @@ public class Client implements Initializable{
 	}
 	private void waitForConnectionClose() {
 		int i = 0;
+		interruptConnectionWait();
 		try {
 			while (socket != null && !socket.isClosed()){
 				if(i > 1024) closeConnection();
@@ -212,6 +228,16 @@ public class Client implements Initializable{
 			};
 		} catch(IOException e){
 			System.out.println("Could not close connection after it took too long to end");
+		}
+	}
+	private void interruptConnectionWait(){
+		try {
+			input.close();
+			//input = new ObjectInputStream(socket.getInputStream());
+		}catch (IOException e){
+			System.out.println("IOException in interrupting connection wait");
+		}catch(NullPointerException e){
+			System.out.println("Input already closed");
 		}
 	}
 
@@ -364,7 +390,16 @@ public class Client implements Initializable{
 	}
 
 	@FXML void startSendMessage() {
-		sendMessage(CLIENT, userText.getText());
+		String message = userText.getText();
+		for(char i: message.toCharArray()){
+			if(i==' ') message = message.substring(1);
+		}
+		if(message.equals("")){
+			userText.setText("");
+			return;
+		}
+		sendMessage(CLIENT, message);
+		userText.setText("");
 	}
 
 	//Getters and Setters
