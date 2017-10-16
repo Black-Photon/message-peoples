@@ -195,6 +195,8 @@ public class Client implements Initializable{
 				return CLIENT;
 			case "INFO":
 				return INFO;
+			case "BOUNCE":
+				return BOUNCE;
 			default:
 				System.out.println("Can't recognise special character");
 		}
@@ -223,7 +225,10 @@ public class Client implements Initializable{
 		interruptConnectionWait();
 		try {
 			while (socket != null && !socket.isClosed()){
-				if(i > 1024) closeConnection();
+				if(i > Math.pow(2, 15)){
+					closeConnection();
+					break;
+				}
 				i++;
 			};
 		} catch(IOException e){
@@ -232,13 +237,17 @@ public class Client implements Initializable{
 	}
 	private void interruptConnectionWait(){
 		try {
-			input.close();
+			releaseInput();
+			//input.close();
 			//input = new ObjectInputStream(socket.getInputStream());
-		}catch (IOException e){
-			System.out.println("IOException in interrupting connection wait");
+		//}catch (IOException e){
+		//	System.out.println("IOException in interrupting connection wait");
 		}catch(NullPointerException e){
 			System.out.println("Input already closed");
 		}
+	}
+	private void releaseInput(){
+		sendMessage(BOUNCE, "");
 	}
 
 	//Input/Output
@@ -257,14 +266,14 @@ public class Client implements Initializable{
 				case USER:
 					output.writeObject(Main.getSpecialCode() + type.toString());
 					output.flush();
-					if (message == null) return;
+					if (message == null || message == "") return;
 					output.writeObject(message);
 					output.flush();
 					break;
 				default:
 					output.writeObject(Main.getSpecialCode() + type.toString());
 					output.flush();
-					if (message == null) return;
+					if (message == null || message == "") return;
 					output.writeObject(message);
 					output.flush();
 
@@ -339,6 +348,7 @@ public class Client implements Initializable{
 						break;
 					case INFO:
 						message = nextString();
+						if(message.equals("")) break;
 						showMessage(INFO, message);
 						break;
 					case SERVER:
@@ -360,10 +370,8 @@ public class Client implements Initializable{
 			closeConnection();
 			return;
 		}
-		if(!isError()) {
-			state = ERROR;
-			System.out.println("Somehow exited loop without END or ERROR");
-		}
+		state = ERROR;
+		System.out.println("Somehow exited loop without END or ERROR");
 	}
 
 	//User Input

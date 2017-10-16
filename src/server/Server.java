@@ -199,6 +199,8 @@ public class Server implements Initializable{
 				return CLIENT;
 			case "INFO":
 				return INFO;
+			case "BOUNCE":
+				return BOUNCE;
 			default:
 				System.out.println("Can't recognise special character");
 		}
@@ -308,6 +310,8 @@ public class Server implements Initializable{
 						sendOthersMessage(CLIENT, message, connections.get(index));
 						showMessage(CLIENT, message, 0);
 						break;
+					case BOUNCE:
+						sendMessage(INFO, "", connection);
 					default:
 						System.out.println("Don't know what to do with this Special");
 				}
