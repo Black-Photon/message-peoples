@@ -352,7 +352,7 @@ public class Client implements Initializable{
 						if(special2.startsWith(Main.getSpecialCode())){
 							special2 = special2.substring(Main.getSpecialCode().length(), special2.length());
 							if(specialFromString(special2)==CLIENT){
-								showMessage(CLIENT, user + " - " + nextString());
+								showMessage(INFO, user + " - " + nextString());
 							}
 						}
 						break;

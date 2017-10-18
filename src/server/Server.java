@@ -272,15 +272,30 @@ public class Server implements Initializable{
 	//Input/Output
 	private void sendAllMessage(Special type, String message){
 		for(Connection i: connections){
-			sendMessage(type, message, i);
+			silentSend(type, message, i);
 		}
+		if(message==null) return;
+		if(type==SERVER_UP) return;
+		if(type==FORWARD) return;
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 	}
 	private void sendOthersMessage(Special type, String message, Connection connection){
 		for(Connection i: connections){
-			if(!i.equals(connection)) sendMessage(type, message, i);
+			if(!i.equals(connection)) silentSend(type, message, i);
 		}
+		if(message==null) return;
+		if(type==SERVER_UP) return;
+		if(type==FORWARD) return;
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message, connection);
 	}
 	private void sendMessage(Special type, String message, Connection connection){
+		silentSend(type, message, connection);
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
+	}
+	private void silentSend(Special type, String message, Connection connection){
 		try {
 			if(type!=null)
 				connection.getOutput().writeObject(Main.getSpecialCode()+type.toString());
@@ -289,18 +304,18 @@ public class Server implements Initializable{
 			if(type==SERVER_UP) return;
 			connection.getOutput().writeObject(message);
 			connection.getOutput().flush();
-
-			if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
-			if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 		}catch(IOException e){
 			System.out.println("Couldn't send message");
 			e.printStackTrace();
 		}
 	}
 	private void showMessage(Special type, String message){
-		showMessage(type, message, connections.indexOf(connection));
+		showMessage(type, message, connection);
 	}
-	private void showMessage(Special type, String message, int index){
+	private void showMessage(Special type, String message, int i){
+		showMessage(type, message, connections.indexOf(i));
+	}
+	private void showMessage(Special type, String message, Connection connection){
 		switch(type){
 			case INFO:
 				chatWindow.appendText(message+"\n");
@@ -309,13 +324,13 @@ public class Server implements Initializable{
 				chatWindow.appendText("SERVER - "+message+"\n");
 				break;
 			case CLIENT:
-				chatWindow.appendText(connections.get(index).getName()+" - "+message+"\n");
+				chatWindow.appendText(connection.getName()+" - "+message+"\n");
 			default:
 				System.out.println("Unexpected Special type");
 		}
 	}
 	private void waitForMessage(int index) throws IOException{
-		sendAllMessage(SERVER_UP, null);
+		//TODO needed ? sendAllMessage(SERVER_UP, null);
 		ableToType(true);
 		String message, special;
 		
@@ -332,6 +347,7 @@ public class Server implements Initializable{
 						break;
 					case JOIN:
 						sendAllMessage(INFO, connections.get(index).getName()+" has joined");
+						System.out.println("CLIENT JOINED on thread "+Thread.currentThread());
 						break;
 					case CLIENT_END:
 						sendAllMessage(CLIENT_END, connections.get(index).getName()+" ended the connection");
@@ -400,6 +416,7 @@ public class Server implements Initializable{
 		String message = userText.getText();
 		for(char i: message.toCharArray()){
 			if(i==' ') message = message.substring(1);
+			else break;
 		}
 		if(message.equals("")){
 			userText.setText("");
