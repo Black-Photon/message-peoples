@@ -118,23 +118,19 @@ public class Client implements Initializable{
 			}
 
 			if(isEnd()){
-				sendMessage(USER_EXIT, "");
-				closeConnection();
+				closeWithMessage(USER_EXIT);
 				return;
 			}
 			if(isError()){
-				sendMessage(CRASH, "");
-				closeConnection();
+				closeWithMessage(CRASH);
 				return;
 			}
 		}
 		if(isEnd()){
-			sendMessage(USER_EXIT, "");
-			closeConnection();
+			closeWithMessage(USER_EXIT);
 		}
 		if(isError()){
-			sendMessage(CRASH, "");
-			closeConnection();
+			closeWithMessage(CRASH);
 		}
 	}
 
@@ -157,9 +153,10 @@ public class Client implements Initializable{
 		input = new ObjectInputStream(socket.getInputStream());
 	}
 	private void closeConnection() throws IOException{
-		if(socket!=null) return;
+		if(socket==null) return;
 		if(socket.isClosed()) return;
 
+		System.out.println("Closing everything");
 		socket.close();
 		input.close();
 		output.flush();
@@ -225,7 +222,13 @@ public class Client implements Initializable{
 		interruptConnectionWait();
 		try {
 			while (socket != null && !socket.isClosed()){
-				if(i > Math.pow(2, 15)){
+				try{
+					Thread.sleep(5);
+				}catch (InterruptedException e){
+					e.printStackTrace();
+				}
+				if(i > Math.pow(2, 8)){
+					System.out.println("Forced to manually close connection");
 					closeConnection();
 					break;
 				}
@@ -238,16 +241,24 @@ public class Client implements Initializable{
 	private void interruptConnectionWait(){
 		try {
 			releaseInput();
-			//input.close();
-			//input = new ObjectInputStream(socket.getInputStream());
-		//}catch (IOException e){
-		//	System.out.println("IOException in interrupting connection wait");
 		}catch(NullPointerException e){
 			System.out.println("Input already closed");
 		}
 	}
 	private void releaseInput(){
+		if(socket == null) return;
+		if(socket.isClosed()) return;
 		sendMessage(BOUNCE, "");
+	}
+	private void closeWithMessage(Special special){
+		if(socket==null) return;
+		if(socket.isClosed()) return;
+		sendMessage(special, "");
+		try {
+			closeConnection();
+		}catch (IOException e){
+			e.printStackTrace();
+		}
 	}
 
 	//Input/Output
@@ -308,6 +319,7 @@ public class Client implements Initializable{
 
 		while (!isEndOrError()) {
 			special = nextString();
+			if(isEndOrError()) break;
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
@@ -376,6 +388,7 @@ public class Client implements Initializable{
 
 	//User Input
 	@FXML void onBackPressed() {
+		sendMessage(USER_EXIT, null);
 		state = END;
 		waitForConnectionClose();
 		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
