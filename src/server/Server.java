@@ -59,6 +59,7 @@ public class Server implements Initializable{
 		}catch (IOException e){
 			state = ERROR;
 			System.out.println("Could not establish Server");
+			showMessage(INFO, "Can't create server");
 			return;
 		}
 		Start.getStage().setOnCloseRequest(e->{
@@ -105,6 +106,7 @@ public class Server implements Initializable{
 	private void runtime() throws IOException{
 		connection = new Connection();
 		connection.setName("USER");
+		Connection thisConnection = connection;
 
 		int index = -1;
 
@@ -117,12 +119,12 @@ public class Server implements Initializable{
 					break;
 				case 1:
 					setupStreams();
-					connections.add(connection);
+					connections.add(thisConnection);
 					state = RUNNING;
 					break;
 				case 2:
 					if(!isEndOrError()) startConnection();
-					index = connections.indexOf(connection);
+					index = connections.indexOf(thisConnection);
 					break;
 				case 3:
 					waitForMessage(index);
@@ -131,12 +133,23 @@ public class Server implements Initializable{
 					break ForLoop;
 			}
 
-			if(isEndOrError()) return;
+			if(isEndOrError()){
+				break;
+			}
 		}
 		if(isEndOrError()){
-			closeConnection(connection);
+			if(isEndOrError()){
+				if(index==-1){
+					sendMessage(SERVER_END, null, connections.get(index));
+					closeConnection(connections.get(index));
+				}else{
+					sendMessage(SERVER_END, null, thisConnection);
+					closeConnection(thisConnection);
+				}
+				if(connections.size()==0) showMessage(INFO,"Server ended the connection");
+			}
 		}
-		if(globalState==END||globalState==ERROR && connections.size()==0){
+		if((globalState==END||globalState==ERROR) && connections.size()==0){
 			server.close();
 		}
 	}
@@ -165,10 +178,12 @@ public class Server implements Initializable{
 			connection.getInput().close();
 			connection.getOutput().close();
 			connection.getSocket().close();
+			System.out.println("Closed connection");
 		}catch (IOException e){
 			e.printStackTrace();
 		}
 		connections.remove(connection);
+		if(connections.size()==0) ableToType(false);
 	}
 	
 	//Useful Methods
@@ -224,6 +239,35 @@ public class Server implements Initializable{
 	private boolean isEndOrError(){
 		return isError() || isEnd();
 	}
+	private void waitForConnectionClose(Connection connection){
+		int i = 0;
+		interruptConnectionWait(connection);
+		while (connection.getSocket() != null && !connection.getSocket().isClosed()){
+			try{
+				Thread.sleep(5);
+			}catch (InterruptedException e){
+				e.printStackTrace();
+			}
+			if(i > Math.pow(2, 8)){
+				System.out.println("Forced to manually close connection");
+				closeConnection(connection);
+				break;
+			}
+			i++;
+		};
+	}
+	private void interruptConnectionWait(Connection connection){
+		try {
+			releaseInput(connection);
+		}catch(NullPointerException e){
+			System.out.println("Input already closed");
+		}
+	}
+	private void releaseInput(Connection connection){
+		if(connection.getSocket() == null) return;
+		if(connection.getSocket().isClosed()) return;
+		sendMessage(BOUNCE, null, connection);
+	}
 
 	//Input/Output
 	private void sendAllMessage(Special type, String message){
@@ -277,6 +321,7 @@ public class Server implements Initializable{
 		
 		while (!isEndOrError()) {
 			special = nextString(index);
+			if(isEndOrError()) break;
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
@@ -322,7 +367,7 @@ public class Server implements Initializable{
 				showMessage(CLIENT, message);
 			}
 		}
-		
+		if(isEnd()) return;
 		if(isError()){
 			globalState = ERROR;
 		}else{
@@ -334,11 +379,21 @@ public class Server implements Initializable{
 	//User Input
 	@FXML void onBackPressed() {
 		onEndPressed();
+		try {
+			if (connections.size() == 0) server.close();
+		}catch (IOException e){
+			e.printStackTrace();
+		}
 		Main.createWindow("Messaging.fxml", Start.getStage(), "Server");
 	}
 	@FXML void onEndPressed() {
+		if(connections.size()==0) return;
 		globalState=END;
-		sendAllMessage(INFO, "Server ended the connection");
+		int size = connections.size();
+		for(int i = 0; i<size; i++){
+			waitForConnectionClose(connections.get(0));
+		}
+		ableToType(false);
 		//TODO Close all threads required???
 	}
 	@FXML void startSendMessage() {

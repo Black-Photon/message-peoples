@@ -161,6 +161,7 @@ public class Client implements Initializable{
 		input.close();
 		output.flush();
 		output.close();
+		ableToType(false);
 	}
 
 
@@ -366,6 +367,9 @@ public class Client implements Initializable{
 					case SERVER:
 						message = nextString();
 						showMessage(SERVER, message);
+						break;
+					case BOUNCE:
+						sendMessage(INFO, null);
 						break;
 					default:
 						System.out.println("Don't know what to do with this Special");
