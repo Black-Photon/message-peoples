@@ -73,8 +73,6 @@ public class Server implements Initializable{
 				System.out.println("Error");
 				exception.printStackTrace();
 			}
-
-			//TODO Review
 			System.out.println("Closing Server");
 			Start.getStage().close();
 			Platform.exit();
@@ -435,7 +433,6 @@ public class Server implements Initializable{
 			waitForConnectionClose(connections.get(0));
 		}
 		ableToType(false);
-		//TODO Close all threads required???
 	}
 	@FXML void startSendMessage() {
 		String message = userText.getText();

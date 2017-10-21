@@ -64,15 +64,12 @@ public class Client implements Initializable{
 					e.consume();
 					return;
 				}
-			}catch(Exception exception){
+			}catch(Exception exception) {
 				System.out.println("Error");
 				exception.printStackTrace();
 			}
-
 			if(socket!=null && !socket.isClosed())
 				sendMessage(USER_EXIT, null);
-
-			//TODO Review
 			System.out.println("Closing Server");
 			Start.getStage().close();
 			Platform.exit();
@@ -315,7 +312,7 @@ public class Client implements Initializable{
 		}
 	}
 	private void waitForMessage() throws IOException{
-		sendMessage(USER, username); //TODO Fix names
+		sendMessage(USER, username);
 		sendMessage(JOIN, null);
 		ableToType(true);
 		String message, special;
