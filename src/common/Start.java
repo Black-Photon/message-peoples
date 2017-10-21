@@ -1,4 +1,4 @@
-package src.common;
+package common;
 
 import javafx.application.Application;
 import javafx.fxml.FXML;

@@ -1,6 +1,6 @@
-package src.messageBoxes.resources.controllers;
+package messageBoxes.resources.controllers;
 
-import src.messageBoxes.TextBox;
+import messageBoxes.TextBox;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;

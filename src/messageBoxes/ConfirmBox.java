@@ -1,4 +1,4 @@
-package src.messageBoxes;
+package messageBoxes;
 
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -23,6 +23,11 @@ public class ConfirmBox extends messageBoxes {
 		super(text, width, title);
 		currentObject = this;
 	}
+
+	/**
+	 *
+	 * @return True if yes pressed, False is no pressed
+	 */
 	public boolean getAnswer() {
 		yes = false;
 		stage = new Stage();

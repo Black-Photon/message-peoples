@@ -5,16 +5,16 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.BorderPane?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="126.0" prefWidth="506.0" stylesheets="@../../../resources/css/main.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="src.messageBoxes.resources.controllers.ConfirmBox_Controller">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="126.0" prefWidth="506.0" stylesheets="@../../../resources/css/main.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="messageBoxes.resources.controllers.ConfirmBox_Controller">
    <left>
-      <Button id="green" mnemonicParsing="false" onAction="#onPressYes" text="YES" BorderPane.alignment="CENTER">
+      <Button id="green" mnemonicParsing="false" onAction="#onPressYes" styleClass="curved" text="YES" BorderPane.alignment="CENTER">
          <BorderPane.margin>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </BorderPane.margin>
       </Button>
    </left>
    <right>
-      <Button id="red" mnemonicParsing="false" onAction="#onPressNo" text="NO" BorderPane.alignment="CENTER">
+      <Button id="red" mnemonicParsing="false" onAction="#onPressNo" styleClass="curved" text="NO" BorderPane.alignment="CENTER">
          <BorderPane.margin>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </BorderPane.margin>

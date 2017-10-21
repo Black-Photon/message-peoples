@@ -1,5 +1,7 @@
-package src.server;
+package server;
 
+import client.Client;
+import common.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -7,338 +9,446 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import src.client.Client;
-import src.common.Connection_Data;
-import src.common.Main;
-import src.common.Start;
-import src.messageBoxes.Error;
+import messageBoxes.ConfirmBox;
+import messageBoxes.Error;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 
-/**
- * Used as controller for a server.
- *
- * <h2>FXML:</h2>
- * <h3>Vars:</h3>
- * TextField userText<br/>
- * TextArea chatWindow
- *
- * <h3>Methods:</h3>
- * startSendMessage sends whatever's in the TextField and clears it
- *
- */
+import static common.State.*;
+import static common.Special.*;
 
 public class Server implements Initializable{
-	private ObjectOutputStream output;
-	private ObjectInputStream input;
-	private ServerSocket server;
-	private Socket socket;
-	private ArrayList<Connection> connections;
-	@FXML
-	public TextField userText;
-	@FXML
-	public TextArea chatWindow;
-	@FXML
-	public Label name;
-	private static boolean end = false;
-	public static Connection_Data data;
+	//VARIABLES --------------------------------------------------------------------------------------------------------
 
-	/**
-	 * Starts the server background running. Called by initialize ONLY
-	 */
-	private void startRunning() {
+	//Global Variables
+	private static ServerSocket server;
+	private static ArrayList<Connection> connections;
+	private Connection connection;
+	private State state;
+	private static State globalState;
+	private static Connection_Data data;
+
+	//FXML Vars
+	@FXML private TextField userText;
+	@FXML private TextArea chatWindow;
+	@FXML private Label name;
+
+
+
+
+
+
+	//METHODS ----------------------------------------------------------------------------------------------------------
+
+	//Initialization
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		name.setText(data.getName());
+		globalState = RUNNING;
+		state = START;
 		connections = new ArrayList<>();
 		try {
-			server = new ServerSocket(Connection.getPort(), 100);
-		}catch(IOException e){
-			e.printStackTrace();
+			server = new ServerSocket(data.getPort(), 100);
+		}catch (IOException e){
+			state = ERROR;
+			System.out.println("Could not establish Server");
+			showMessage(INFO, "Can't create server");
+			return;
 		}
-		startConnecting();
-	}
-
-	/**
-	 * Sends a message to specified connection
-	 * @param message Message to send
-	 * @param connection Connection to send message to
-	 */
-	private void sendMessage(String message, Connection connection){
-		if(message.equals("")||message.equals(" ")) return;
-		silentSend("SERVER - "+message, connection);
-	}
-
-	private void silentSend(String message, Connection connection){
-		if(message.equals("")||message.equals(" ")) return;
-
-		if(message.endsWith("END")){
-			end = true;
-		}
-
-		try {
-			if(isClient(message)) {
-				connection.getOutput().writeObject(message.substring(2));
-				connection.getOutput().flush();
-			}else{
-				connection.getOutput().writeObject(message);
-				connection.getOutput().flush();
-			}
-		}catch (IOException e) {
-			chatWindow.appendText("Error in sending message\n");
-		}
-	}
-
-	/**
-	 * Tests if the message is from the client
-	 * @param message Message to test
-	 * @return Whether the message is from the client
-	 */
-	private boolean isClient(String message){
-		return message.substring(0,2).equals("/c");
-	}
-
-	/**
-	 * Attempts to send a message to everyone connected. Calls sendMessage(message);
-	 * @param message The message to send
-	 */
-	private void sendAllMessage(String message){
-		for(Connection i: connections) {
-			sendMessage(message, i);
-		}
-	}
-
-	/**
-	 * Connect's socket to serverSocket
-	 * @throws IOException Thrown in connection
-	 */
-	private void waitForConnection() throws IOException {
-		if(connections.size()==0) {
-			showMessage("Waiting for Connection...");
-		}
-		try {
-			socket = server.accept();
-		}catch (SocketException e){
-			System.out.println("Stopped attempting connection");
-			socket = null;
-		}
-	}
-
-	/**
-	 * Creates input and output streams
-	 * @throws IOException Due to creation
-	 */
-	private void setupStreams() throws IOException{
-		output = new ObjectOutputStream(socket.getOutputStream());
-		output.flush();
-		input = new ObjectInputStream(socket.getInputStream());
-	}
-
-	/**
-	 * Waits for a message, and displays it
-	 * @param current Current connection to listen to
-	 * @throws IOException When reading message sent
-	 */
-	private void whileChatting(Connection current) throws  IOException{
-		String message = "";
-		ableToType(true);
-		do{
-			try{
-				message = (String) current.getInput().readObject();
-				if(message.endsWith("/u")){
-					String user = message.substring(0,message.length()-2);
-					current.setName(user);
-					message = user+" connected";
-					showMessage("SERVER - "+message);
-					sendAllMessage(message);
-				}else {
-					showMessage(message);
-					for (Connection connection : connections) {
-						if (!connection.equals(current)) {
-							sendMessage("/c" + message, connection);
-						}
-					}
-				}
-			}catch (EOFException e){
-				break;
-			}catch (ClassNotFoundException e) {
-				showMessage("Unable to process received message");
-			}catch (Exception e){
-				new Error("ERROR!!! NEW EXCEPTION!! #4242", 500);
-			}
-		}while(!message.endsWith("END") && !server.isClosed());
-	}
-
-	/**
-	 * Shows the message passed, and a new line
-	 * @param message Message to show
-	 */
-	private void showMessage(String message){
-		chatWindow.appendText(message+"\n");
-	}
-
-	/**
-	 * Closes given connection
-	 * @param connection Which connection to close
-	 */
-	private void closeConnection(Connection connection) {
-		if(!connection.getSocket().isClosed())
-		try {
-			connection.getSocket().close();
-			connection.getInput().close();
-			connection.getOutput().close();
-			connections.remove(connection);
-		}catch (IOException e) {
-			e.printStackTrace();
-		}
-		if(end){
-			showMessage("Server Ended the Connection");
-			ableToType(false);
-		}else {
-			showMessage("SERVER - "+connection.getName()+" Left");
-			sendAllMessage(connection.getName()+" Left");
-			if (connections.size() == 0) {
-				ableToType(false);
-				startConnecting();
-			}
-		}
-	}
-	private void closeAllConnections(){
-		for(int i = 0; i<connections.size(); i++){
-			closeConnection(connections.get(0));
-		}
-		try {
-			server.close();
-		}catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Changes whether you are permitted to type
-	 * @param canType Whether you can type
-	 */
-	private void ableToType(boolean canType){
-		userText.setEditable(canType);
-	}
-
-	/**
-	 * Start's the background processes running in a new thread
-	 */
-	@FXML
-	public void initialize(URL location, ResourceBundle resources) {
 		Start.getStage().setOnCloseRequest(e->{
+			try {
+				boolean answer = !new ConfirmBox("Are you sure you want to exit").getAnswer();
+				if (answer){
+					e.consume();
+					return;
+				}
+			}catch(Exception exception){
+				System.out.println("Error");
+				exception.printStackTrace();
+			}
+
+			//TODO Review
 			System.out.println("Closing Server");
-			//closeAllConnections();
 			Start.getStage().close();
 			Platform.exit();
 			System.exit(0);
 		});
+		startConnection();
+	}
+	private void startConnection(){
+		if(isEndOrError()) return;
 
-		if(data!=null) {
-			name.setText(data.getName());
-		}
+		if(connections.size()==0) showMessage(INFO, "Waiting for connection...");
 
-		chatWindow.textProperty().addListener(e->{
-			chatWindow.setScrollTop(Double.MAX_VALUE);
-		});
-
-		Task task = new Task() {
+		new Thread(new Task() {
 			@Override
 			protected Object call() throws Exception {
 				return null;
 			}
 
-			@Override
-			public void run() {
-				startRunning();
+			public void run(){
+				try {
+					runtime();
+				}catch (IOException e){
+					new Error("Error During Runtime");
+					e.printStackTrace();
+				}
 			}
-		};
+		}).start();
+	}
+	private void runtime() throws IOException{
+		connection = new Connection();
+		connection.setName("USER");
+		Connection thisConnection = connection;
 
-		Thread thread = new Thread(task);
-		thread.start();
+		int index = -1;
 
+		//Does each event before checking the state for an END or ERROR to exit, ensuring wherever it is, it will exit out when needed
+		ForLoop:
+		for(int i = 0; i<255; i++){
+			switch(i){
+				case 0:
+					connectSocket();
+					break;
+				case 1:
+					setupStreams();
+					connections.add(thisConnection);
+					state = RUNNING;
+					break;
+				case 2:
+					if(!isEndOrError()) startConnection();
+					index = connections.indexOf(thisConnection);
+					break;
+				case 3:
+					waitForMessage(connections.get(index));
+					break;
+				default:
+					break ForLoop;
+			}
+
+			if(isEndOrError()){
+				break;
+			}
+		}
+		if(isEndOrError() && connections.size()!=0){
+			if(thisConnection.getSocket()==null){
+				if(connections.size()==0){
+					startConnection();
+				}else
+				for(int i=0; i<connections.size(); i++){
+					if(connections.get(i).getSocket()!=null){
+						thisConnection = connections.get(i);
+						break;
+					}
+				}
+			}
+			if (thisConnection.getSocket() != null) {
+				if (index == -1) {
+					sendMessage(SERVER_END, null, thisConnection);
+					closeConnection(thisConnection);
+				} else {
+					sendMessage(SERVER_END, null, connections.get(index));
+					closeConnection(connections.get(index));
+				}
+			}
+			if (connections.size() == 0) showMessage(INFO, "Server ended the connection");
+		}
+		if((globalState==END||globalState==ERROR) && connections.size()==0){
+			server.close();
+		}
 	}
 
-	/**
-	 * Attempt's to send a message to all connected devices
-	 */
-	@FXML
-	public void startSendMessage(){
+	//Technical Methods
+	private void connectSocket(){
+		try {
+			Socket socket = server.accept();
+			connection.setSocket(socket);
+		}catch(IOException e){
+			if(isEnd()) return;
+			state = ERROR;
+			System.out.println("Could not establish connection");
+		}
+	}
+	private void setupStreams() throws IOException{
+		ObjectInputStream input = new ObjectInputStream(connection.getSocket().getInputStream());
+		ObjectOutputStream output = new ObjectOutputStream(connection.getSocket().getOutputStream());
+		output.flush();
+
+		connection.setInput(input);
+		connection.setOutput(output);
+	}
+	private void closeConnection(Connection connection){
+		try {
+			connection.getInput().close();
+			connection.getOutput().close();
+			connection.getSocket().close();
+			System.out.println("Closed connection");
+		}catch (IOException e){
+			e.printStackTrace();
+		}
+		connections.remove(connection);
+		if(connections.size()==0){
+			ableToType(false);
+		};
+	}
+	
+	//Useful Methods
+	private void ableToType(boolean canType){
+		userText.setEditable(canType);
+	}
+	private Special specialFromString(String text){
+		switch (text){
+			case "USER":
+				return USER;
+			case "JOIN":
+				return JOIN;
+			case "CLIENT_END":
+				return CLIENT_END;
+			case "SERVER_END":
+				return SERVER_END;
+			case "CRASH":
+				return CRASH;
+			case "USER_EXIT":
+				return USER_EXIT;
+			case "SERVER_UP":
+				return SERVER_UP;
+			case "FORWARD":
+				return FORWARD;
+			case "SERVER":
+				return SERVER;
+			case "CLIENT":
+				return CLIENT;
+			case "INFO":
+				return INFO;
+			case "BOUNCE":
+				return BOUNCE;
+			default:
+				System.out.println("Can't recognise special character");
+		}
+		return null;
+	}
+	private String nextString(Connection connection){
+		try {
+			String out = (String) connection.getInput().readObject();
+			return out;
+		}catch(SocketException e){
+			sendAllMessage(INFO, connection.getName()+" has left");
+			closeConnection(connection);
+			state = END;
+		}catch(ClassNotFoundException | IOException e){
+			e.printStackTrace();
+		}
+		return null;
+	}
+	private boolean isError(){
+		return globalState== ERROR || state== ERROR;
+	}
+	private boolean isEnd(){
+		return globalState== END || state== END;
+	}
+	private boolean isEndOrError(){
+		return isError() || isEnd();
+	}
+	private void waitForConnectionClose(Connection connection){
+		int i = 0;
+		interruptConnectionWait(connection);
+		while (connection.getSocket() != null && !connection.getSocket().isClosed()){
+			try{
+				Thread.sleep(5);
+			}catch (InterruptedException e){
+				e.printStackTrace();
+			}
+			if(i > Math.pow(2, 8)){
+				System.out.println("Forced to manually close connection");
+				closeConnection(connection);
+				break;
+			}
+			i++;
+		};
+	}
+	private void interruptConnectionWait(Connection connection){
+		try {
+			releaseInput(connection);
+		}catch(NullPointerException e){
+			System.out.println("Input already closed");
+		}
+	}
+	private void releaseInput(Connection connection){
+		if(connection.getSocket() == null) return;
+		if(connection.getSocket().isClosed()) return;
+		sendMessage(BOUNCE, null, connection);
+	}
+
+	//Input/Output
+	private void sendAllMessage(Special type, String message){
+		for(Connection i: connections){
+			silentSend(type, message, i);
+		}
+		if(message==null) return;
+		if(type==SERVER_UP) return;
+		if(type==FORWARD) return;
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
+	}
+	private void sendOthersMessage(Special type, String message, Connection connection){
+		for(Connection i: connections){
+			if(!i.equals(connection)) silentSend(type, message, i);
+		}
+		if(message==null) return;
+		if(type==SERVER_UP) return;
+		if(type==FORWARD) return;
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message, connection);
+	}
+	private void sendMessage(Special type, String message, Connection connection){
+		silentSend(type, message, connection);
+		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
+		if(message==null||message=="") return;
+		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
+	}
+	private void silentSend(Special type, String message, Connection connection){
+		if(connection.getSocket()==null){
+			System.out.println("Empty connection");
+			return;
+		}
+		try {
+			if(type!=null)
+				connection.getOutput().writeObject(Main.getSpecialCode()+type.toString());
+			connection.getOutput().flush();
+			if(message==null) return;
+			if(type==SERVER_UP) return;
+			connection.getOutput().writeObject(message);
+			connection.getOutput().flush();
+		}catch(IOException e){
+			System.out.println("Couldn't send message");
+			e.printStackTrace();
+		}
+	}
+	private void showMessage(Special type, String message){
+		showMessage(type, message, connection);
+	}
+	private void showMessage(Special type, String message, int i){
+		showMessage(type, message, connections.get(i));
+	}
+	private void showMessage(Special type, String message, Connection connection){
+		switch(type){
+			case INFO:
+				chatWindow.appendText(message+"\n");
+				break;
+			case SERVER:
+				chatWindow.appendText("SERVER - "+message+"\n");
+				break;
+			case CLIENT:
+				chatWindow.appendText(connection.getName()+" - "+message+"\n");
+			default:
+				System.out.println("Unexpected Special type");
+		}
+	}
+	private void waitForMessage(Connection connection) throws IOException{
+		ableToType(true);
+		String message, special;
+		
+		while (!isEndOrError()) {
+			special = nextString(connection);
+			if(isEndOrError()) break;
+			if(special.startsWith(Main.getSpecialCode())){
+				special = special.substring(Main.getSpecialCode().length(), special.length());
+
+				switch(specialFromString(special)){
+					case USER:
+						String name = nextString(connection);
+						connection.setName(name);
+						break;
+					case JOIN:
+						sendAllMessage(INFO, connection.getName()+" has joined");
+						break;
+					case CLIENT_END:
+						sendAllMessage(CLIENT_END, connection.getName()+" ended the connection");
+						globalState = END;
+						state = END;
+						return;
+					case CRASH:
+						sendAllMessage(INFO, connection.getName()+" crashed");
+						state = END;
+						return;
+					case USER_EXIT:
+						sendAllMessage(INFO, connection.getName()+" has left");
+						closeConnection(connection);
+						return;
+					case INFO:
+						message = nextString(connection);
+						sendOthersMessage(INFO, message, connection);
+						break;
+					case CLIENT:
+						message = nextString(connection);
+						sendOthersMessage(FORWARD, connection.getName(), connection);
+						sendOthersMessage(CLIENT, message, connection);
+						break;
+					case BOUNCE:
+						sendMessage(INFO, "", connection);
+					default:
+						System.out.println("Don't know what to do with this Special");
+				}
+				
+				
+			}else{
+				message = special;
+				showMessage(CLIENT, message);
+			}
+		}
+		if(isEnd()) return;
+		if(isError()){
+			globalState = ERROR;
+		}else{
+			state = ERROR;
+			System.out.println("Somehow exited loop without END or ERROR");
+		}
+	}
+
+	//User Input
+	@FXML void onBackPressed() {
+		onEndPressed();
+		try {
+			if (connections.size() == 0) server.close();
+		}catch (IOException e){
+			e.printStackTrace();
+		}
+		Main.createWindow("Messaging.fxml", Start.getStage(), "Server");
+	}
+	@FXML void onEndPressed() {
+		if(connections.size()==0) return;
+		globalState=END;
+		int size = connections.size();
+		for(int i = 0; i<size; i++){
+			waitForConnectionClose(connections.get(0));
+		}
+		ableToType(false);
+		//TODO Close all threads required???
+	}
+	@FXML void startSendMessage() {
 		String message = userText.getText();
-		if(message.equals("")||message.equals(" ")) return;
-		showMessage("SERVER - "+message);
-		sendAllMessage(message);
+		for(char i: message.toCharArray()){
+			if(i==' ') message = message.substring(1);
+			else break;
+		}
+		if(message.equals("")){
+			userText.setText("");
+			return;
+		}
+		sendAllMessage(SERVER, message);
 		userText.setText("");
 	}
 
-	/**
-	 * Handles every connection. Only call with intent attempt to connect to a new device. Self-Sustaining (Recursive, in order to allow infinite connections)
-	 */
-	private void startConnecting(){
-		System.out.println(Thread.currentThread()+"a");
-		new Thread(
-				new Task() {
-					@Override
-					protected Object call() throws Exception {
-						return null;
-					}
-					@Override
-					public void run() {
-						System.out.println(Thread.currentThread()+"b");
-						Connection connection = new Connection();
-						try {
-							System.out.println(Thread.currentThread()+"c");
-							waitForConnection();
-							if(socket==null){
-								System.out.println(Thread.currentThread()+" Ending");
-								return;
-							}
-							connection.setSocket(socket);
-							System.out.println(Thread.currentThread()+"d");
-							setupStreams();
-							connection.setInput(input);
-							connection.setOutput(output);
-							connections.add(connection);
-							System.out.println(Thread.currentThread()+"e");
-							startConnecting();
-							System.out.println(Thread.currentThread()+"f");
-							whileChatting(connection);
-							System.out.println(Thread.currentThread()+"g");
-						} catch (SocketException e){
-							System.out.println("Stopped attempting stream connections");
-						} catch (EOFException e) {
-							showMessage("Server ended the socket");
-						} catch (IOException e) {
-							e.printStackTrace();
-						} finally {
-							System.out.println(Thread.currentThread()+"h");
-							if(!connection.getSocket().isClosed()) closeConnection(connection);
-						}
-					}
-				}
-		).start();
-	}
-
-	public void onBackPressed(){
-		endEverything();
-		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
-	}
-
-	public void onEndPressed(){
-		endEverything();
-	}
-
-	private void endEverything(){
-		closeAllConnections();
-	}
-
+	//Getters and Setters
 	public static void setData(Connection_Data data){
 		Server.data = data;
 	}
-
 }

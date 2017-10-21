@@ -1,8 +1,8 @@
-package src.common;
+package common;
 
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import src.messageBoxes.messageBoxes;
+import messageBoxes.messageBoxes;
 
 import java.util.ArrayList;
 

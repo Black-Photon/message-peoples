@@ -1,4 +1,4 @@
-package src.messageBoxes;
+package messageBoxes;
 
 import javafx.stage.Stage;
 
