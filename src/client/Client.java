@@ -70,6 +70,9 @@ public class Client implements Initializable{
 				exception.printStackTrace();
 			}
 
+			if(socket!=null && !socket.isClosed())
+				sendMessage(USER_EXIT, null);
+
 			//TODO Review
 			System.out.println("Closing Server");
 			Start.getStage().close();
@@ -392,6 +395,7 @@ public class Client implements Initializable{
 
 	//User Input
 	@FXML void onBackPressed() {
+		if(socket!=null && !socket.isClosed())
 		sendMessage(USER_EXIT, null);
 		state = END;
 		waitForConnectionClose();
@@ -418,6 +422,7 @@ public class Client implements Initializable{
 		String message = userText.getText();
 		for(char i: message.toCharArray()){
 			if(i==' ') message = message.substring(1);
+			else break;
 		}
 		if(message.equals("")){
 			userText.setText("");
