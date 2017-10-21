@@ -1,6 +1,5 @@
 package client;
 
-import com.sun.corba.se.impl.io.InputStreamHook;
 import common.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -237,7 +236,7 @@ public class Client implements Initializable{
 					break;
 				}
 				i++;
-			};
+			}
 		} catch(IOException e){
 			System.out.println("Could not close connection after it took too long to end");
 		}
@@ -269,10 +268,10 @@ public class Client implements Initializable{
 	private void sendMessage(Special type, String message){
 		try {
 			if(type==null) {
-				output.writeObject(Main.getSpecialCode() + type.toString());
+				output.writeObject(message);
 				output.flush();
 				showMessage(CLIENT, message);
-			}
+			}else
 			switch(type) {
 				case JOIN:
 					output.writeObject(Main.getSpecialCode() + type.toString());
@@ -281,14 +280,14 @@ public class Client implements Initializable{
 				case USER:
 					output.writeObject(Main.getSpecialCode() + type.toString());
 					output.flush();
-					if (message == null || message == "") return;
+					if (message == null || message.equals("")) return;
 					output.writeObject(message);
 					output.flush();
 					break;
 				default:
 					output.writeObject(Main.getSpecialCode() + type.toString());
 					output.flush();
-					if (message == null || message == "") return;
+					if (message == null || message.equals("")) return;
 					output.writeObject(message);
 					output.flush();
 
@@ -324,11 +323,18 @@ public class Client implements Initializable{
 		while (!isEndOrError()) {
 			special = nextString();
 			if(isEndOrError()) break;
+			if(special==null){
+				state = ERROR;
+				System.out.println("No string read");
+			}else
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
-
-				switch(specialFromString(special)){
+				Special special1 = specialFromString(special);
+				if(special1==null){
+					System.out.println("No such special");
+				}else
+					switch(special1){
 					case USER:
 						//Ignoring
 						break;
@@ -352,6 +358,10 @@ public class Client implements Initializable{
 					case FORWARD:
 						String user = nextString();
 						String special2 = nextString();
+						if(user==null||special2==null){
+							state=ERROR;
+							System.out.println("Received null from forwarding");
+						}else
 						if(special2.startsWith(Main.getSpecialCode())){
 							special2 = special2.substring(Main.getSpecialCode().length(), special2.length());
 							if(specialFromString(special2)==CLIENT){
@@ -364,7 +374,7 @@ public class Client implements Initializable{
 						break;
 					case INFO:
 						message = nextString();
-						if(message.equals("")) break;
+						if(message==null||message.equals("")) break;
 						showMessage(INFO, message);
 						break;
 					case SERVER:
@@ -433,7 +443,6 @@ public class Client implements Initializable{
 	}
 
 	//Getters and Setters
-
 	public static void setData(Connection_Data data){
 		Client.data = data;
 	}

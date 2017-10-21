@@ -1,6 +1,5 @@
 package server;
 
-import client.Client;
 import common.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -143,12 +142,12 @@ public class Server implements Initializable{
 				if(connections.size()==0){
 					startConnection();
 				}else
-				for(int i=0; i<connections.size(); i++){
-					if(connections.get(i).getSocket()!=null){
-						thisConnection = connections.get(i);
-						break;
+					for (Connection c : connections) {
+						if (c.getSocket() != null) {
+							thisConnection = c;
+							break;
+						}
 					}
-				}
 			}
 			if (thisConnection.getSocket() != null) {
 				if (index == -1) {
@@ -197,7 +196,7 @@ public class Server implements Initializable{
 		connections.remove(connection);
 		if(connections.size()==0){
 			ableToType(false);
-		};
+		}
 	}
 	
 	//Useful Methods
@@ -237,8 +236,7 @@ public class Server implements Initializable{
 	}
 	private String nextString(Connection connection){
 		try {
-			String out = (String) connection.getInput().readObject();
-			return out;
+			return (String) connection.getInput().readObject();
 		}catch(SocketException e){
 			sendAllMessage(INFO, connection.getName()+" has left");
 			closeConnection(connection);
@@ -272,7 +270,7 @@ public class Server implements Initializable{
 				break;
 			}
 			i++;
-		};
+		}
 	}
 	private void interruptConnectionWait(Connection connection){
 		try {
@@ -311,7 +309,7 @@ public class Server implements Initializable{
 	private void sendMessage(Special type, String message, Connection connection){
 		silentSend(type, message, connection);
 		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
-		if(message==null||message=="") return;
+		if(message==null||message.equals("")) return;
 		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 	}
 	private void silentSend(Special type, String message, Connection connection){
@@ -335,9 +333,6 @@ public class Server implements Initializable{
 	private void showMessage(Special type, String message){
 		showMessage(type, message, connection);
 	}
-	private void showMessage(Special type, String message, int i){
-		showMessage(type, message, connections.get(i));
-	}
 	private void showMessage(Special type, String message, Connection connection){
 		switch(type){
 			case INFO:
@@ -358,11 +353,20 @@ public class Server implements Initializable{
 		
 		while (!isEndOrError()) {
 			special = nextString(connection);
+
 			if(isEndOrError()) break;
+			if(special==null){
+				state = ERROR;
+				System.out.println("No string read");
+			}else
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
-				switch(specialFromString(special)){
+				Special special1 = specialFromString(special);
+				if(special1==null){
+					System.out.println("No such special");
+				}else
+				switch(special1){
 					case USER:
 						String name = nextString(connection);
 						connection.setName(name);

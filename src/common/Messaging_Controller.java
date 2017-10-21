@@ -9,7 +9,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import client.Client;
 import server.Server;
-import server.tempServer;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ public class Messaging_Controller implements Initializable{
 	@FXML
 	private TableColumn<Connection_Data, String> ipColumn;
 
-	private ObservableList tableData;
 	private ArrayList<Connection_Data> arrayList;
 	private MessagingFiles files;
 
@@ -106,7 +104,7 @@ public class Messaging_Controller implements Initializable{
 	}
 
 	private void refresh(){
-		tableData = FXCollections.observableArrayList(arrayList);
+		ObservableList<Connection_Data> tableData = FXCollections.observableArrayList(arrayList);
 		tableView.setItems(tableData);
 		files.saveMessagingConfig("messaging_config.txt", arrayList);
 	}
