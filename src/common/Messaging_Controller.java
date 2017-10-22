@@ -15,24 +15,25 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 public class Messaging_Controller implements Initializable{
+	//VARIABLES --------------------------------------------------------------------------------------------------------
 
-	@FXML
-	private TableView<Connection_Data> tableView;
-
-	@FXML
-	private TableColumn<Connection_Data, String> nameColumn;
-
-	@FXML
-	private TableColumn<Connection_Data, Integer> portColumn;
-
-	@FXML
-	private TableColumn<Connection_Data, String> ipColumn;
-
+	//Global Variables
 	private ArrayList<Connection_Data> arrayList;
 	private MessagingFiles files;
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
+	//FXML Vars
+	@FXML private TableView<Connection_Data> tableView;
+	@FXML private TableColumn<Connection_Data, String> nameColumn;
+	@FXML private TableColumn<Connection_Data, Integer> portColumn;
+	@FXML private TableColumn<Connection_Data, String> ipColumn;
+
+
+
+	//METHODS ----------------------------------------------------------------------------------------------------------
+
+	//Initialization
+	@Override public void initialize(URL location, ResourceBundle resources) {
+		//Set's up how the table looks for both sides
 		if(clientside()) {
 			nameColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.4));
 			portColumn.prefWidthProperty().bind(tableView.widthProperty().multiply(0.2));
@@ -51,22 +52,24 @@ public class Messaging_Controller implements Initializable{
 
 		files = new MessagingFiles();
 
+		//Get's info form messaging_config.txt
 		arrayList = files.readMessagingConfig("messaging_config.txt");
 		refresh();
 
 	}
 
-	@FXML
-	void onPressCreate() {
+	//User Input
+	@FXML void onPressCreate() {
+		//Brings up menu for new connection, and adds it
 		ArrayList<Object> data = new Connection_Settings().createWindow();
+		//In case it was unsuccessful
 		if(data==null || data.get(0).equals(false)) {
 			return;
 		}
 		addEntry(data);
 	}
-
-	@FXML
-	void onPressJoin() {
+	@FXML void onPressJoin() {
+		//Joins selected connection
 		Connection_Data data = tableView.getSelectionModel().getSelectedItem();
 		if(data==null) return;
 		if(clientside()){
@@ -79,8 +82,8 @@ public class Messaging_Controller implements Initializable{
 		}
 
 	}
-	@FXML
-	void onPressEdit() {
+	@FXML void onPressEdit() {
+		//Brings up edit screen, and replaces the old data with the new
 		Connection_Data originalData = tableView.getSelectionModel().getSelectedItem();
 		if(originalData==null) return;
 		ArrayList<Object> data = new Connection_Settings().createWindow(originalData);
@@ -91,24 +94,28 @@ public class Messaging_Controller implements Initializable{
 		arrayList.remove(originalData);
 		refresh();
 	}
-
-	@FXML
-	void onDeletePressed(){
+	@FXML void onDeletePressed(){
 		arrayList.remove(tableView.getSelectionModel().getSelectedItem());
 		refresh();
 	}
-
-	@FXML
-	void onPressBack(){
+	@FXML void onPressBack(){
 		Main.createWindow("Main.fxml", Start.getStage(), "Messaging");
 	}
 
+
+	//Useful Methods
+	/**
+	 * Refresh's so the table is up to date, and saves current data
+	 */
 	private void refresh(){
 		ObservableList<Connection_Data> tableData = FXCollections.observableArrayList(arrayList);
 		tableView.setItems(tableData);
 		files.saveMessagingConfig("messaging_config.txt", arrayList);
 	}
-
+	/**
+	 * Adds entry to table before refreshing
+	 * @param data Data to add to the table
+	 */
 	private void addEntry(ArrayList data){
 		String name = (String) data.get(1);
 		ArrayList ip = (ArrayList) data.get(2);
@@ -117,10 +124,15 @@ public class Messaging_Controller implements Initializable{
 		arrayList.add(connection);
 		refresh();
 	}
-
+	/**
+	 * Returns true if the side is SERVER
+	 */
 	private static boolean serverside(){
 		return Start.getSide()==Sides.SERVER;
 	}
+	/**
+	 * Returns true if the side is CLIENT
+	 */
 	private static boolean clientside(){
 		return Start.getSide()==Sides.CLIENT;
 	}
