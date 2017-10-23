@@ -28,7 +28,7 @@ import static common.State.*;
  * Client file, containing the controller for the actual messaging application.
  * It uses a system of states, so simply setting the state can change the behaviour of the whole program - mainly to exit with ease
  */
-public class Client implements Initializable{
+public class Client extends Common implements Initializable{
 	//VARIABLES --------------------------------------------------------------------------------------------------------
 
 	//Global Variables
@@ -56,25 +56,7 @@ public class Client implements Initializable{
 	@Override public void initialize(URL location, ResourceBundle resources) {
 		state = START;
 		name.setText(data.getName());
-		Start.getStage().setOnCloseRequest(e->{
-			//Checks you actually intended to exit
-			try {
-				boolean answer = !new ConfirmBox("Are you sure you want to exit").getAnswer();
-				if (answer){
-					e.consume();
-					return;
-				}
-			}catch(Exception exception) {
-				System.out.println("Error");
-				exception.printStackTrace();
-			}
-			if(socket!=null && !socket.isClosed())
-				sendMessage(USER_EXIT, null);
-			System.out.println("Closing Server");
-			Start.getStage().close();
-			Platform.exit();
-			System.exit(0);
-		});
+		closeRequest(Start.getStage(), Sides.CLIENT);
 		final_data = data;
 		startConnection();
 	}
@@ -86,26 +68,12 @@ public class Client implements Initializable{
 
 		//Starts in a thread so it can be called and not interrupt flow of the program
 		//To interrupt the flow, use runtime();
-		new Thread(new Task() {
-			@Override
-			protected Object call() throws Exception {
-				return null;
-			}
-
-			public void run(){
-				try {
-					runtime();
-				}catch (IOException e){
-					new Error("Error During Runtime");
-					e.printStackTrace();
-				}
-			}
-		}).start();
+		runInThread();
 	}
 	/**
 	 * Runs the main program setting up connections
 	 */
-	private void runtime() throws IOException{
+	@Override protected void runtime() throws IOException{
 		//Does each event before checking the state for an END or ERROR to exit, ensuring wherever it is, it will exit out when needed
 		ForLoop:
 		for(int i = 0; i<255; i++){
@@ -124,6 +92,7 @@ public class Client implements Initializable{
 					break ForLoop;
 			}
 
+			//Close when END or ERROR
 			if(isEnd()){
 				closeWithMessage(USER_EXIT);
 				return;
@@ -160,7 +129,7 @@ public class Client implements Initializable{
 	}
 	/**
 	 * Set's input and output streams
-	 * @throws IOException if an I/O error occurs while reading stream header
+	 * @throws IOException if an I/O error occurs
 	 */
 	private void setupStreams() throws IOException{
 		output = new ObjectOutputStream(socket.getOutputStream());
@@ -171,7 +140,7 @@ public class Client implements Initializable{
 	 * Closes connection
 	 * @throws IOException If an I/O error happens closing parts
 	 */
-	private void closeConnection() throws IOException{
+	@Override protected void closeConnection() throws IOException{
 		if(socket==null) return;
 		if(socket.isClosed()) return;
 
@@ -191,42 +160,6 @@ public class Client implements Initializable{
 	 */
 	private void ableToType(boolean canType){
 		userText.setEditable(canType);
-	}
-	/**
-	 * Convert's a String to a type SPECIAL
-	 * @param text Text to convert
-	 * @return SPECIAL translation, or null if it is not a special
-	 */
-	private Special specialFromString(String text){
-		switch (text){
-			case "USER":
-				return USER;
-			case "JOIN":
-				return JOIN;
-			case "CLIENT_END":
-				return CLIENT_END;
-			case "SERVER_END":
-				return SERVER_END;
-			case "CRASH":
-				return CRASH;
-			case "USER_EXIT":
-				return USER_EXIT;
-			case "SERVER_UP":
-				return SERVER_UP;
-			case "FORWARD":
-				return FORWARD;
-			case "SERVER":
-				return SERVER;
-			case "CLIENT":
-				return CLIENT;
-			case "INFO":
-				return INFO;
-			case "BOUNCE":
-				return BOUNCE;
-			default:
-				System.out.println("Can't recognise special character");
-		}
-		return null;
 	}
 	/**
 	 * Waits for the next String sent, and returns it
@@ -263,54 +196,6 @@ public class Client implements Initializable{
 		return isError() || isEnd();
 	}
 	/**
-	 * Wait's a while see if setting State to END or ERROR takes effect, and if not, force closes it
-	 */
-	private void waitForConnectionClose() {
-		int i = 0;
-
-		//When to stop - If it is x, It will wait 0.005*2^x seconds
-		final int stopping_point = 8;
-
-		//Must interrupt the waitForMessage method, which can't check for END until a message is received
-		interruptConnectionWait();
-		try {
-			while (socket != null && !socket.isClosed()){
-				try{
-					Thread.sleep(5);
-				}catch (InterruptedException e){
-					e.printStackTrace();
-				}
-
-				if(i > Math.pow(2, stopping_point)){
-					System.out.println("Forced to manually close connection");
-					closeConnection();
-					break;
-				}
-				i++;
-			}
-		} catch(IOException e){
-			System.out.println("Could not close connection after it took too long to end");
-		}
-	}
-	/**
-	 * Attempts to interrupt the waitForMessage method
-	 */
-	private void interruptConnectionWait(){
-		try {
-			releaseInput();
-		}catch(NullPointerException e){
-			System.out.println("Input already closed");
-		}
-	}
-	/**
-	 * Sends a message to the server requesting it to send a blank message, in order to release the attempt to get the next string
-	 */
-	private void releaseInput(){
-		if(socket == null) return;
-		if(socket.isClosed()) return;
-		sendMessage(BOUNCE, "");
-	}
-	/**
 	 * Sends a special to the server before closing the connection
 	 * @param special Special to send
 	 */
@@ -326,13 +211,12 @@ public class Client implements Initializable{
 	}
 
 	//Input/Output
-
 	/**
 	 * Sends a Special and message to the server
 	 * @param type Special type of message
 	 * @param message Message to send
 	 */
-	private void sendMessage(Special type, String message){
+	@Override protected void sendMessage(Special type, String message){
 		try {
 			//If no type, just send the message
 			if(type==null) {
@@ -425,6 +309,7 @@ public class Client implements Initializable{
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
+				//Split just in case of null
 				Special special1 = specialFromString(special);
 				if(special1==null){
 					System.out.println("No such special");
@@ -496,12 +381,13 @@ public class Client implements Initializable{
 		if(socket!=null && !socket.isClosed())
 		sendMessage(USER_EXIT, null);
 		state = END;
-		waitForConnectionClose();
+		waitForConnectionClose(socket, Sides.CLIENT, null);
 		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
 	}
 	@FXML void onConnectPressed() {
+		if(!socket.isClosed()) return;
 		state = END;
-		waitForConnectionClose();
+		waitForConnectionClose(socket, Sides.CLIENT, null);
 		state = START;
 		new Thread(new Task() {
 			@Override

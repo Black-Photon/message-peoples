@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
 import static common.State.*;
 import static common.Special.*;
 
-public class Server implements Initializable{
+public class Server extends Common implements Initializable{
 	//VARIABLES --------------------------------------------------------------------------------------------------------
 
 	//Global Variables
@@ -42,14 +42,10 @@ public class Server implements Initializable{
 
 
 
-
-
-
 	//METHODS ----------------------------------------------------------------------------------------------------------
 
 	//Initialization
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
+	@Override public void initialize(URL location, ResourceBundle resources) {
 		name.setText(data.getName());
 		globalState = RUNNING;
 		state = START;
@@ -62,46 +58,26 @@ public class Server implements Initializable{
 			showMessage(INFO, "Can't create server");
 			return;
 		}
-		Start.getStage().setOnCloseRequest(e->{
-			try {
-				boolean answer = !new ConfirmBox("Are you sure you want to exit").getAnswer();
-				if (answer){
-					e.consume();
-					return;
-				}
-			}catch(Exception exception){
-				System.out.println("Error");
-				exception.printStackTrace();
-			}
-			System.out.println("Closing Server");
-			Start.getStage().close();
-			Platform.exit();
-			System.exit(0);
-		});
+		closeRequest(Start.getStage(), Sides.SERVER);
 		startConnection();
 	}
+	/**
+	 * Runs the main program setting up connections in a new Thread
+	 */
 	private void startConnection(){
 		if(isEndOrError()) return;
 
 		if(connections.size()==0) showMessage(INFO, "Waiting for connection...");
 
-		new Thread(new Task() {
-			@Override
-			protected Object call() throws Exception {
-				return null;
-			}
-
-			public void run(){
-				try {
-					runtime();
-				}catch (IOException e){
-					new Error("Error During Runtime");
-					e.printStackTrace();
-				}
-			}
-		}).start();
+		//Starts in a thread so it can be called and not interrupt flow of the program
+		//To interrupt the flow, use runtime();
+		runInThread();
 	}
-	private void runtime() throws IOException{
+	/**
+	 * Runs the main program setting up connections
+	 */
+	@Override protected void runtime() throws IOException{
+		//Must keep data about current connection, as global variables change with threads
 		connection = new Connection();
 		connection.setName("USER");
 		Connection thisConnection = connection;
@@ -134,20 +110,20 @@ public class Server implements Initializable{
 			if(isEndOrError()){
 				break;
 			}
-		}
+		}//For when it must end and some connections to close
 		if(isEndOrError() && connections.size()!=0){
+			//If the connection is not yet initialized, instead use the first initialized connection (if there is one)
 			if(thisConnection.getSocket()==null){
-				if(connections.size()==0){
-					startConnection();
-				}else
-					for (Connection c : connections) {
-						if (c.getSocket() != null) {
-							thisConnection = c;
-							break;
-						}
+				for (Connection c : connections) {
+					if (c.getSocket() != null) {
+						thisConnection = c;
+						break;
 					}
+				}
 			}
+			//Not else in case the connection did change
 			if (thisConnection.getSocket() != null) {
+				//Tries to use the index if possible
 				if (index == -1) {
 					sendMessage(SERVER_END, null, thisConnection);
 					closeConnection(thisConnection);
@@ -164,6 +140,9 @@ public class Server implements Initializable{
 	}
 
 	//Technical Methods
+	/**
+	 * Uses the data from the choosing menu to connect the socket to the server on a given port
+	 */
 	private void connectSocket(){
 		try {
 			Socket socket = server.accept();
@@ -174,6 +153,10 @@ public class Server implements Initializable{
 			System.out.println("Could not establish connection");
 		}
 	}
+	/**
+	 * Set's input and output streams
+	 * @throws IOException if an I/O error occurs
+	 */
 	private void setupStreams() throws IOException{
 		ObjectInputStream input = new ObjectInputStream(connection.getSocket().getInputStream());
 		ObjectOutputStream output = new ObjectOutputStream(connection.getSocket().getOutputStream());
@@ -182,7 +165,10 @@ public class Server implements Initializable{
 		connection.setInput(input);
 		connection.setOutput(output);
 	}
-	private void closeConnection(Connection connection){
+	/**
+	 * Closes connection
+	 */
+	@Override protected void closeConnection(Connection connection){
 		try {
 			connection.getInput().close();
 			connection.getOutput().close();
@@ -198,44 +184,21 @@ public class Server implements Initializable{
 	}
 	
 	//Useful Methods
+	/**
+	 * Set's whether the user can type
+	 * @param canType True if can type, false if can't
+	 */
 	private void ableToType(boolean canType){
 		userText.setEditable(canType);
 	}
-	private Special specialFromString(String text){
-		switch (text){
-			case "USER":
-				return USER;
-			case "JOIN":
-				return JOIN;
-			case "CLIENT_END":
-				return CLIENT_END;
-			case "SERVER_END":
-				return SERVER_END;
-			case "CRASH":
-				return CRASH;
-			case "USER_EXIT":
-				return USER_EXIT;
-			case "SERVER_UP":
-				return SERVER_UP;
-			case "FORWARD":
-				return FORWARD;
-			case "SERVER":
-				return SERVER;
-			case "CLIENT":
-				return CLIENT;
-			case "INFO":
-				return INFO;
-			case "BOUNCE":
-				return BOUNCE;
-			default:
-				System.out.println("Can't recognise special character");
-		}
-		return null;
-	}
+	/**
+	 * Waits for the next String sent, and returns it
+	 * @return The string sent
+	 */
 	private String nextString(Connection connection){
 		try {
 			return (String) connection.getInput().readObject();
-		}catch(SocketException e){
+		}catch(SocketException e){ //Should only happen if socket is closed, indicating the user left
 			sendAllMessage(INFO, connection.getName()+" has left");
 			closeConnection(connection);
 			state = END;
@@ -244,72 +207,83 @@ public class Server implements Initializable{
 		}
 		return null;
 	}
+	/**
+	 * Test's if an the state is ERROR
+	 * @return result
+	 */
 	private boolean isError(){
 		return globalState== ERROR || state== ERROR;
 	}
+	/**
+	 * Test's if an the state is END
+	 * @return result
+	 */
 	private boolean isEnd(){
 		return globalState== END || state== END;
 	}
+	/**
+	 * Test's if an the state is END or ERROR
+	 * @return result
+	 */
 	private boolean isEndOrError(){
 		return isError() || isEnd();
 	}
-	private void waitForConnectionClose(Connection connection){
-		int i = 0;
-		interruptConnectionWait(connection);
-		while (connection.getSocket() != null && !connection.getSocket().isClosed()){
-			try{
-				Thread.sleep(5);
-			}catch (InterruptedException e){
-				e.printStackTrace();
-			}
-			if(i > Math.pow(2, 8)){
-				System.out.println("Forced to manually close connection");
-				closeConnection(connection);
-				break;
-			}
-			i++;
-		}
-	}
-	private void interruptConnectionWait(Connection connection){
-		try {
-			releaseInput(connection);
-		}catch(NullPointerException e){
-			System.out.println("Input already closed");
-		}
-	}
-	private void releaseInput(Connection connection){
-		if(connection.getSocket() == null) return;
-		if(connection.getSocket().isClosed()) return;
-		sendMessage(BOUNCE, null, connection);
-	}
 
 	//Input/Output
+	/**
+	 * Sends a given message of given type to all connections<br/>
+	 * Shows the message once
+	 * @param type Special to send in addition to message
+	 * @param message Message to send
+	 */
 	private void sendAllMessage(Special type, String message){
 		for(Connection i: connections){
 			silentSend(type, message, i);
 		}
+		//How to show the message locally
 		if(message==null) return;
 		if(type==SERVER_UP) return;
 		if(type==FORWARD) return;
 		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
 		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 	}
+	/**
+	 * Sends a given message of given type to all connections except the one given<br/>
+	 * Shows the message once
+	 * @param type Special to send in addition to message
+	 * @param message Message to send
+	 * @param connection Connection to exclude
+	 */
 	private void sendOthersMessage(Special type, String message, Connection connection){
 		for(Connection i: connections){
 			if(!i.equals(connection)) silentSend(type, message, i);
 		}
+		//How to show the message locally
 		if(message==null) return;
 		if(type==SERVER_UP) return;
 		if(type==FORWARD) return;
 		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
 		if(!chatWindow.getText().endsWith(message)) showMessage(type, message, connection);
 	}
-	private void sendMessage(Special type, String message, Connection connection){
+	/**
+	 * Sends a message to the given connection<br/>
+	 * Shows the message after
+	 * @param type Special to send in addition to the message
+	 * @param message Message to send
+	 * @param connection Connection to send to
+	 */
+	@Override protected void sendMessage(Special type, String message, Connection connection){
 		silentSend(type, message, connection);
 		if(type!=INFO && type!=SERVER && type!=CLIENT) type = SERVER;
 		if(message==null||message.equals("")) return;
 		if(!chatWindow.getText().endsWith(message)) showMessage(type, message);
 	}
+	/**
+	 * Sends a message to the given connection without showing the result
+	 * @param type Special to send in addition to the message
+	 * @param message Message to send
+	 * @param connection Connection to send to
+	 */
 	private void silentSend(Special type, String message, Connection connection){
 		if(connection.getSocket()==null){
 			System.out.println("Empty connection");
@@ -317,10 +291,12 @@ public class Server implements Initializable{
 		}
 		try {
 			if(type!=null)
+				//Sends Special
 				connection.getOutput().writeObject(Main.getSpecialCode()+type.toString());
 			connection.getOutput().flush();
 			if(message==null) return;
 			if(type==SERVER_UP) return;
+			//Sends message
 			connection.getOutput().writeObject(message);
 			connection.getOutput().flush();
 		}catch(IOException e){
@@ -328,9 +304,50 @@ public class Server implements Initializable{
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * Shows the message in a way denoted by the special
+	 * <table>
+	 *     <tr>
+	 *         <td>INFO</td>
+	 *         <td>Shows the message</td>
+	 *     </tr>
+	 *     <tr>
+	 *         <td>CLIENT</td>
+	 *         <td>Shows the message with "(connection)USERNAME -" before</td>
+	 *     </tr>
+	 *
+	 *     <tr>
+	 *         <td>SERVER</td>
+	 *         <td>Shows the message with "SERVER -" before</td>
+	 *     </tr>
+	 * </table>
+	 * @param type Special type
+	 * @param message Message to show
+	 */
 	private void showMessage(Special type, String message){
 		showMessage(type, message, connection);
 	}
+	/**
+	 * Shows the message in a way denoted by the special
+	 * <table>
+	 *     <tr>
+	 *         <td>INFO</td>
+	 *         <td>Shows the message</td>
+	 *     </tr>
+	 *     <tr>
+	 *         <td>CLIENT</td>
+	 *         <td>Shows the message with "(connection)USERNAME -" before</td>
+	 *     </tr>
+	 *
+	 *     <tr>
+	 *         <td>SERVER</td>
+	 *         <td>Shows the message with "SERVER -" before</td>
+	 *     </tr>
+	 * </table>
+	 * @param type Special type
+	 * @param message Message to show
+	 * @param connection Connection to use the username of in case of CLIENT
+	 */
 	private void showMessage(Special type, String message, Connection connection){
 		switch(type){
 			case INFO:
@@ -345,6 +362,11 @@ public class Server implements Initializable{
 				System.out.println("Unexpected Special type");
 		}
 	}
+	/**
+	 * Get's messages from connection until END or ERROR
+	 * @param connection Connection to receive messages from
+	 * @throws IOException when I/O error occurs
+	 */
 	private void waitForMessage(Connection connection) throws IOException{
 		ableToType(true);
 		String message, special;
@@ -357,48 +379,50 @@ public class Server implements Initializable{
 				state = ERROR;
 				System.out.println("No string read");
 			}else
+				//If it's a special
 			if(special.startsWith(Main.getSpecialCode())){
 				special = special.substring(Main.getSpecialCode().length(), special.length());
 
+				//Split just in case of null
 				Special special1 = specialFromString(special);
 				if(special1==null){
 					System.out.println("No such special");
 				}else
-				switch(special1){
-					case USER:
-						String name = nextString(connection);
-						connection.setName(name);
-						break;
-					case JOIN:
-						sendAllMessage(INFO, connection.getName()+" has joined");
-						break;
-					case CLIENT_END:
-						sendAllMessage(CLIENT_END, connection.getName()+" ended the connection");
-						globalState = END;
-						state = END;
-						return;
-					case CRASH:
-						sendAllMessage(INFO, connection.getName()+" crashed");
-						state = END;
-						return;
-					case USER_EXIT:
-						sendAllMessage(INFO, connection.getName()+" has left");
-						closeConnection(connection);
-						return;
-					case INFO:
-						message = nextString(connection);
-						sendOthersMessage(INFO, message, connection);
-						break;
-					case CLIENT:
-						message = nextString(connection);
-						sendOthersMessage(FORWARD, connection.getName(), connection);
-						sendOthersMessage(CLIENT, message, connection);
-						break;
-					case BOUNCE:
-						sendMessage(INFO, "", connection);
-					default:
-						System.out.println("Don't know what to do with this Special");
-				}
+					switch(special1){
+						case USER: //Set's the connection username
+							String name = nextString(connection);
+							connection.setName(name);
+							break;
+						case JOIN: //Displays join message
+							sendAllMessage(INFO, connection.getName()+" has joined");
+							break;
+						case CLIENT_END: //Sends end message, and ends
+							sendAllMessage(CLIENT_END, connection.getName()+" ended the connection");
+							globalState = END;
+							state = END;
+							return;
+						case CRASH: //Sends crash message, and ends
+							sendAllMessage(INFO, connection.getName()+" crashed");
+							state = END;
+							return;
+						case USER_EXIT: //Sends leaving message, closing the connection
+							sendAllMessage(INFO, connection.getName()+" has left");
+							closeConnection(connection);
+							return;
+						case INFO: //Sends message to others
+							message = nextString(connection);
+							sendOthersMessage(INFO, message, connection);
+							break;
+						case CLIENT: //Sends message to others
+							message = nextString(connection);
+							sendOthersMessage(FORWARD, connection.getName(), connection); //Used to identify the user which sent the messaeg
+							sendOthersMessage(CLIENT, message, connection);
+							break;
+						case BOUNCE: //Sends empty message for Client's releaseInput method
+							sendMessage(INFO, "", connection);
+						default:
+							System.out.println("Don't know what to do with this Special");
+					}
 				
 				
 			}else{
@@ -430,12 +454,13 @@ public class Server implements Initializable{
 		globalState=END;
 		int size = connections.size();
 		for(int i = 0; i<size; i++){
-			waitForConnectionClose(connections.get(0));
+			waitForConnectionClose(connections.get(0).getSocket(), Sides.SERVER, connections.get(0));
 		}
 		ableToType(false);
 	}
 	@FXML void startSendMessage() {
 		String message = userText.getText();
+		//Removes useless spaces at start of message
 		for(char i: message.toCharArray()){
 			if(i==' ') message = message.substring(1);
 			else break;

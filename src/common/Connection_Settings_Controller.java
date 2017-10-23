@@ -11,32 +11,28 @@ import java.util.ResourceBundle;
 import messageBoxes.Error;
 
 public class Connection_Settings_Controller implements Initializable{
+	//VARIABLES --------------------------------------------------------------------------------------------------------
 
-	@FXML
-	private TextField nameBox;
+	//FXML Vars
+	@FXML private TextField nameBox;
+	@FXML private TextField ip1Box;
+	@FXML private TextField ip2Box;
+	@FXML private TextField ip3Box;
+	@FXML private TextField ip4Box;
+	@FXML private TextField ipPortBox;
 
-	@FXML
-	private TextField ip1Box;
-
-	@FXML
-	private TextField ip2Box;
-
-	@FXML
-	private TextField ip3Box;
-
-	@FXML
-	private TextField ip4Box;
-
-	@FXML
-	private TextField ipPortBox;
-
+	//Data
 	private ArrayList<TextField> ipArray;
 	private ArrayList<Integer> limits;
-
 	private static Connection_Data connection_data;
 
-	@Override
-	public void initialize(URL location, ResourceBundle resources) {
+
+
+	//METHODS ----------------------------------------------------------------------------------------------------------
+
+	//Initialization
+	@Override public void initialize(URL location, ResourceBundle resources) {
+		//Set's up all data using previously set connection_data variable
 		ipArray = new ArrayList<>();
 		limits = new ArrayList<>();
 		if(serverside()){
@@ -65,16 +61,14 @@ public class Connection_Settings_Controller implements Initializable{
 		ipPortBox.setText(Integer.toString(connection_data.getPort()));
 	}
 
-	@FXML
-	void onBackPressed() {
+	//FXML Methods
+	@FXML void onBackPressed() {
 		ArrayList<Object> data = new ArrayList<>();
 		data.add(false);
 		Connection_Settings.getCurrentObject().setData(data);
 		Connection_Settings.getCurrentObject().exit();
 	}
-
-	@FXML
-	void onConfirmPressed() {
+	@FXML void onConfirmPressed() {
 		if(!confirmTextSize()){
 			return;
 		}
@@ -97,7 +91,22 @@ public class Connection_Settings_Controller implements Initializable{
 
 		returnInfo(true);
 	}
+	/**
+	 * Confirms each part with the confirm() method
+	 */
+	@FXML void confirmText(){
+		if(clientside())
+			for(int i = 0; i<ipArray.size(); i++){
+				confirm(ipArray.get(i), limits.get(i));
+			}else
+		if(serverside()) confirm(ipPortBox, limits.get(4));
+	}
 
+	//Useful Methods
+	/**
+	 * Set's the data in a static global variable which be accessed after the program is closed
+	 * @param success True if the procedure was successful
+	 */
 	private void returnInfo(boolean success){
 		confirmText();
 		ArrayList<Object> data = new ArrayList<>();
@@ -113,15 +122,11 @@ public class Connection_Settings_Controller implements Initializable{
 		Connection_Settings.getCurrentObject().setData(data);
 		Connection_Settings.getCurrentObject().exit();
 	}
-
-	@FXML
-	void confirmText(){
-		if(clientside())
-		for(int i = 0; i<ipArray.size(); i++){
-			confirm(ipArray.get(i), limits.get(i));
-		}else
-		if(serverside()) confirm(ipPortBox, limits.get(4));
-	}
+	/**
+	 * Confirms the field does not contain more characters than allowed, removing one if it does, and confirms there are no letters, also removing
+	 * @param textField To confirm
+	 * @param limit Limit to test against
+	 */
 	private void confirm(TextField textField, int limit){
 		if(textField.getText().length()>limit){
 			textField.setText(textField.getText(0, limit));
@@ -134,9 +139,13 @@ public class Connection_Settings_Controller implements Initializable{
 			if(end>=0){
 				textField.setText(textField.getText(0, end));
 			}
+			confirm(textField, limit);
 		}
 	}
-
+	/**
+	 * Ensures all text boxes are fully completed, giving an error message otherwise
+	 * @return True if all text boxes are completed
+	 */
 	private boolean confirmTextSize(){
 		for(int i = 0; i<ipArray.size();i++){
 			if(clientside() || i==4)
@@ -148,15 +157,15 @@ public class Connection_Settings_Controller implements Initializable{
 		}
 		return true;
 	}
-
-	public static void setConnection_data(Connection_Data connection_data) {
-		Connection_Settings_Controller.connection_data = connection_data;
-	}
-
 	private static boolean serverside(){
 		return Start.getSide()==Sides.SERVER;
 	}
 	private static boolean clientside(){
 		return Start.getSide()==Sides.CLIENT;
+	}
+
+	//Getters and Setters
+	public static void setConnection_data(Connection_Data connection_data) {
+		Connection_Settings_Controller.connection_data = connection_data;
 	}
 }

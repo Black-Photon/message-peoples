@@ -10,6 +10,10 @@ public class Main {
 
 	//Global Variables
 	private static final Windows windows = new Windows();
+	/**
+	 * This is the static code used to work out if a message is a special or not<br/>
+	 * It is intended to be complex enough it's unlikely a user would use it as the start of a message
+	 */
 	private static final String specialCode = "//#@vfh7ahvgf//";
 
 

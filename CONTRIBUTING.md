@@ -11,7 +11,37 @@ If you fix a bug, add a pull request explaining why you did what you did in comm
 Developing:
 I run using IntelliJ. There are 2 main functions. Client and Server for corresponding purposes
 
+Formatting:
+To keep consistency, please use the following format in files:
+    
+<!-- language: lang-java -->
+    
+    //VARIABLES --------------------------------------------------------------------------------------------------------
+    
+    //Var Type 1
+    private int randomVar;
+    public String thisVar;
+    
+    //Var Type 2
+    public int otherVar;
+    
+    
+    
+ 	//METHODS ----------------------------------------------------------------------------------------------------------
+ 	
+ 	//Constuctor
+ 	thisClass(){}
+ 	
+ 	//Method Type 2
+ 	@Override protected void life(){}
+ 	/**
+ 	 * Documentation
+ 	 */
+ 	@FXML public String anotherMethod(){}
+ 	public void method();
 
+Note the 3 lines above the METHODS line. You may exclude certain parts in files with small enough sections, or use differently if you feel it's necessary.
+The point of this is to make things EASIER later on. If it becomes too difficult, you may use less, or make slight alterations
 
 This project is in the process of making a messaging application easy to use. Any ideas whatsoever are helpful
 

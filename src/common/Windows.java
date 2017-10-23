@@ -12,6 +12,8 @@ import java.net.URL;
  * Used by main class to create windows
  */
 public class Windows {
+	//METHODS ----------------------------------------------------------------------------------------------------------
+
 	/**
 	 * Only called by Main in window creating methods<br/>
 	 * Set's the given Stage's scene to one given by the file <b>location</b> in folder <b>startLocation</b><br/>
@@ -21,9 +23,8 @@ public class Windows {
 	 * @param title Title for the stage
 	 * @param startLocation Folder to find the location relative to
 	 * @throws NullPointerException If location is not valid
-	 */
+	 */ //Not static as getClass() can't be called by a static method
 	public void createWindow(String location, Stage window, String title, String startLocation){
-		//Not static as getClass() can't be called by a static method
 		try {
 			//Set's scene to that given by a FXML file and set's the title
 			URL classLocation = getClass().getClassLoader().getResource(startLocation + location);

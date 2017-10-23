@@ -3,6 +3,8 @@ package messageBoxes;
 import javafx.stage.Stage;
 import common.Windows;
 
+//Imported from jOSeph
+
 public class MessageBoxesMain {
 	/**
 	 * Call to create a window, with given FXML file, window, and title
