@@ -1,0 +1,18 @@
+.root{
+    -fx-background-color: lightcoral;
+    -fx-text-fill: darkslategray;
+    -fx-font-size: 12pt;
+}
+.button{
+    -fx-font-size: 10pt;
+    -fx-background-radius: 6;
+    -fx-background-color: #282828;
+    -fx-text-fill: white;
+    -fx-background-size: 10%;
+}
+.button:hover{
+    -fx-background-color: firebrick;
+}
+.button:pressed{
+    -fx-background-color: tomato;
+}
