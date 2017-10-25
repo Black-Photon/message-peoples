@@ -25,6 +25,10 @@ public class TextBox extends messageBoxes{
 		currentObject = this;
 	}
 
+	/**
+	 * Creates a new text box and returns the result
+	 * @return Text entered
+	 */
 	public String getString(){
 		writtenText = "";
 		stage = new Stage();
@@ -38,10 +42,17 @@ public class TextBox extends messageBoxes{
 		return currentObject;
 	}
 
+	/**
+	 * Ignore
+	 * @return
+	 */
 	public String getWrittenText() {
 		return writtenText;
 	}
-
+	/**
+	 * Ignore
+	 * @param writtenText
+	 */
 	public void setWrittenText(String writtenText) {
 		this.writtenText = writtenText;
 	}

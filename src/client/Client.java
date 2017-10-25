@@ -34,7 +34,6 @@ public class Client extends Common implements Initializable{
 	//Global Variables
 	private static Connection_Data data;
 	private static State state;
-	private final String username = "CLIENT";
 
 	//FXML Vars
 	@FXML private TextField userText;
@@ -277,7 +276,7 @@ public class Client extends Common implements Initializable{
 				chatWindow.appendText(message+"\n");
 				break;
 			case CLIENT:
-				chatWindow.appendText(username + " - " + message+"\n");
+				chatWindow.appendText(Start.getUsername() + " - " + message+"\n");
 				break;
 			case SERVER:
 				chatWindow.appendText("SERVER - "+message+"\n");
@@ -292,7 +291,7 @@ public class Client extends Common implements Initializable{
 	 */
 	private void waitForMessage() throws IOException{
 		//Sends info to say you joined
-		sendMessage(USER, username);
+		sendMessage(USER, Start.getUsername());
 		sendMessage(JOIN, null);
 		ableToType(true);
 		String message, special;
