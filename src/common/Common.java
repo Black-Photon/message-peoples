@@ -2,10 +2,9 @@ package common;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.geometry.Side;
 import javafx.stage.Stage;
-import messageBoxes.ConfirmBox;
-import messageBoxes.Error;
+import messageBoxes.sourceFiles.ConfirmBox;
+import messageBoxes.sourceFiles.Error;
 import server.Connection;
 
 import java.io.IOException;
@@ -38,7 +37,7 @@ public class Common {
 		stage.setOnCloseRequest(e->{
 			//Checks you actually intend to exit
 			try {
-				boolean answer = !new ConfirmBox("Are you sure you want to exit").getAnswer();
+				boolean answer = !new ConfirmBox("Are you sure you want to exit").createResponseBox();
 				if (answer){
 					e.consume();
 					return;

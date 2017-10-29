@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import messageBoxes.TextBox;
+import messageBoxes.sourceFiles.TextBox;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -69,7 +69,7 @@ public class Start extends Application implements Initializable {
 	}
 	@FXML void onClickChangeName() {
 		TextBox textBox = new TextBox("What would you like the username to become", 500, "New Username");
-		username = textBox.getString();
+		username = textBox.createResponseBox();
 		files.saveName(username);
 		name.setText(username);
 	}

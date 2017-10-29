@@ -1,5 +1,6 @@
 package common;
 
+import common.connectionSettings.Connection_Settings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -61,7 +62,7 @@ public class Messaging_Controller implements Initializable{
 	//User Input
 	@FXML void onPressCreate() {
 		//Brings up menu for new connection, and adds it
-		ArrayList<Object> data = new Connection_Settings().createWindow();
+		ArrayList<Object> data = new Connection_Settings().createResponseBox();
 		//In case it was unsuccessful
 		if(data==null || data.get(0).equals(false)) {
 			return;
@@ -86,7 +87,7 @@ public class Messaging_Controller implements Initializable{
 		//Brings up edit screen, and replaces the old data with the new
 		Connection_Data originalData = tableView.getSelectionModel().getSelectedItem();
 		if(originalData==null) return;
-		ArrayList<Object> data = new Connection_Settings().createWindow(originalData);
+		ArrayList<Object> data = new Connection_Settings().createResponseBox(originalData);
 		if(data==null || data.get(0).equals(false)) {
 			return;
 		}

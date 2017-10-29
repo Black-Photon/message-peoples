@@ -1,15 +1,11 @@
 package server;
 
 import common.*;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import messageBoxes.ConfirmBox;
-import messageBoxes.Error;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

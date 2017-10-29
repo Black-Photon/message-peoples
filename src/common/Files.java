@@ -1,6 +1,6 @@
 package common;
 
-import messageBoxes.Error;
+import messageBoxes.sourceFiles.Error;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -115,7 +115,7 @@ public class Files {
 			closeFile();
 		}catch(IOException e){
 			e.printStackTrace();
-			new Error("Error #0014: IOException at Files.java", 600);
+			new Error("Error #0014: IOException at Files.java", 600).showWindow();
 		}
 	}
 }

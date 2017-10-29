@@ -6,7 +6,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="117.0" prefWidth="601.0" stylesheets="@../../../resources/css/main.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="messageBoxes.resources.controllers.TextBox_Controller">
+<BorderPane fx:id="borderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="117.0" prefWidth="601.0" stylesheets="@../css/main.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="messageBoxes.sourceFiles.TextBox_Controller">
    <top>
       <Label id="medium" fx:id="title" text="title" BorderPane.alignment="CENTER">
          <BorderPane.margin>
@@ -15,14 +15,14 @@
       </Label>
    </top>
    <center>
-      <TextField fx:id="textBar" onAction="#onPressOk" BorderPane.alignment="CENTER">
+      <TextField fx:id="textBar" onAction="#onOkPressed" BorderPane.alignment="CENTER">
          <BorderPane.margin>
             <Insets bottom="20.0" left="20.0" right="10.0" top="20.0" />
          </BorderPane.margin>
       </TextField>
    </center>
    <right>
-      <Button mnemonicParsing="false" onAction="#onPressOk" text="OK" BorderPane.alignment="CENTER">
+      <Button mnemonicParsing="false" onAction="#onOkPressed" text="OK" BorderPane.alignment="CENTER">
          <BorderPane.margin>
             <Insets bottom="20.0" left="10.0" right="20.0" top="20.0" />
          </BorderPane.margin>

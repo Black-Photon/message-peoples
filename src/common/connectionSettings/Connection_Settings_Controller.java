@@ -1,16 +1,19 @@
-package common;
+package common.connectionSettings;
 
+import common.Connection_Data;
+import common.Sides;
+import common.Start;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-import messageBoxes.Error;
+import messageBoxes.sourceFiles.Error;
+import messageBoxes.sourceFiles.Message_Controller;
 
-public class Connection_Settings_Controller implements Initializable{
+public class Connection_Settings_Controller extends Message_Controller{
 	//VARIABLES --------------------------------------------------------------------------------------------------------
 
 	//FXML Vars
@@ -24,14 +27,17 @@ public class Connection_Settings_Controller implements Initializable{
 	//Data
 	private ArrayList<TextField> ipArray;
 	private ArrayList<Integer> limits;
-	private static Connection_Data connection_data;
 
 
 
 	//METHODS ----------------------------------------------------------------------------------------------------------
 
 	//Initialization
-	@Override public void initialize(URL location, ResourceBundle resources) {
+	@Override public void initialize(URL location, ResourceBundle resources){
+		super.initialize(location, resources);
+		Connection_Settings connection_settings = (Connection_Settings) thisObject;
+		Connection_Data connection_data = connection_settings.getDefaultData();
+
 		//Set's up all data using previously set connection_data variable
 		ipArray = new ArrayList<>();
 		limits = new ArrayList<>();
@@ -63,10 +69,12 @@ public class Connection_Settings_Controller implements Initializable{
 
 	//FXML Methods
 	@FXML void onBackPressed() {
+		Connection_Settings connection_settings = (Connection_Settings) thisObject;
+
 		ArrayList<Object> data = new ArrayList<>();
 		data.add(false);
-		Connection_Settings.getCurrentObject().setData(data);
-		Connection_Settings.getCurrentObject().exit();
+		connection_settings.setData(data);
+		connection_settings.exit();
 	}
 	@FXML void onConfirmPressed() {
 		if(!confirmTextSize()){
@@ -108,6 +116,8 @@ public class Connection_Settings_Controller implements Initializable{
 	 * @param success True if the procedure was successful
 	 */
 	private void returnInfo(boolean success){
+		Connection_Settings connection_settings = (Connection_Settings) thisObject;
+
 		confirmText();
 		ArrayList<Object> data = new ArrayList<>();
 		data.add(success);
@@ -119,8 +129,8 @@ public class Connection_Settings_Controller implements Initializable{
 		}
 
 		data.add(ipNameArray);
-		Connection_Settings.getCurrentObject().setData(data);
-		Connection_Settings.getCurrentObject().exit();
+		connection_settings.setData(data);
+		connection_settings.exit();
 	}
 	/**
 	 * Confirms the field does not contain more characters than allowed, removing one if it does, and confirms there are no letters, also removing
@@ -135,6 +145,8 @@ public class Connection_Settings_Controller implements Initializable{
 		try{
 			int x = Integer.parseInt(textField.getText());
 		}catch (NumberFormatException e){
+			if(textField.getText().equals("")) return;
+
 			int end = textField.getLength()-1;
 			if(end>=0){
 				textField.setText(textField.getText(0, end));
@@ -151,21 +163,16 @@ public class Connection_Settings_Controller implements Initializable{
 			if(clientside() || i==4)
 //				then
 				if(ipArray.get(i).getText().length()>limits.get(i)){
-					new Error("Please fully complete all boxes",500);
+					new Error("Please fully complete all boxes",500).showWindow();
 					return false;
 				}
 		}
 		return true;
 	}
 	private static boolean serverside(){
-		return Start.getSide()==Sides.SERVER;
+		return Start.getSide()== Sides.SERVER;
 	}
 	private static boolean clientside(){
 		return Start.getSide()==Sides.CLIENT;
-	}
-
-	//Getters and Setters
-	public static void setConnection_data(Connection_Data connection_data) {
-		Connection_Settings_Controller.connection_data = connection_data;
 	}
 }
