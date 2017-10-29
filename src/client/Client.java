@@ -382,7 +382,8 @@ public class Client extends Common implements Initializable{
 		Main.createWindow("Messaging.fxml", Start.getStage(), "Messaging");
 	}
 	@FXML void onConnectPressed() {
-		if(!socket.isClosed()) return;
+		if(socket!=null)
+			if(!socket.isClosed()) return;
 		state = END;
 		waitForConnectionClose(socket, Sides.CLIENT, null);
 		state = START;
